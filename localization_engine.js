@@ -55,6 +55,8 @@ if (USE_TW) {
         "[修改] 加载页汉化注入成功！": "[修改] 載入頁漢化注入成功！",
         "[修改] 正在向 updater.js 注入更新弹窗汉化...": "[修改] 正在向 updater.js 注入更新彈出視窗漢化...",
         "[修改] 更新弹窗汉化注入成功！": "[修改] 更新彈出視窗漢化注入成功！",
+        "[修改] 正在向 wizardHtml.js 注入 IDE 安装向导汉化...": "[修改] 正在向 wizardHtml.js 注入 IDE 安裝精靈漢化...",
+        "[修改] IDE 安装向导汉化注入成功！": "[修改] IDE 安裝精靈漢化注入成功！",
         "[打包] 正在将修改后的内容打包回 app.asar...": "[打包] 正在將修改後的內容打包回 app.asar...",
         "[√] Antigravity 2.0 汉化部署完成！": "[√] Antigravity 2.0 漢化部署完成！",
         "[√] Antigravity 1.0 汉化部署完成！": "[√] Antigravity 1.0 漢化部署完成！",
@@ -355,6 +357,16 @@ function generateJs() {
                 
                 // 1. 精确匹配（含大小写自动纠正与快捷键检测）
                 const shortcutTrans = translateWithShortcut(valNorm);
+                function translateTimeStr(timeStr) {
+                    let t = (timeStr || '').trim().replace(/\.$/, '');
+                    t = t.replace(/(\d+)\s*days?/gi, (m, d) => d + (USE_TW ? ' 天' : ' 天'))
+                         .replace(/(\d+)\s*hours?/gi, (m, h) => h + (USE_TW ? ' 小時' : ' 小时'))
+                         .replace(/(\d+)\s*minutes?/gi, (m, min) => min + (USE_TW ? ' 分鐘' : ' 分钟'))
+                         .replace(/(\d+)\s*seconds?/gi, (m, s) => s + (USE_TW ? ' 秒' : ' 秒'))
+                         .replace(/,\s*/g, ' ');
+                    return t;
+                }
+
                 if (shortcutTrans) {
                     newVal = shortcutTrans;
                 } else if (map.has(valNorm)) {
@@ -367,62 +379,69 @@ function generateJs() {
                     newVal = USE_TW ? "Cloud SQL 遠端 MCP 伺服器可讓您存取並執行 Cloud SQL 工具，用於管理 Cloud SQL 執行個體、管理使用者、建立和復原資料備份及資料庫維運。" : "Cloud SQL 远程 MCP 服务器可让您访问并运行 Cloud SQL 工具，用于管理 Cloud SQL 实例、管理用户、创建和恢复数据备份及数据库运维。";
                 } else if (/^The Spanner remote/i.test(valNorm)) {
                     newVal = USE_TW ? "Spanner 遠端 MCP 伺服器可讓您從 AI 開發環境中存取並執行 Spanner 工具，以建立、管理和查詢分散式資料庫資源。" : "Spanner 远程 MCP 服务器可让您从 AI 开发环境中访问并运行 Spanner 工具，以创建、管理和查询分布式数据库资源。";
-                } else if (/^Refreshes in (\d+) days?, (\d+) hours?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Refreshes in (\d+) days?, (\d+) hours?$/i, (match, d, h) => {
-                        return USE_TW ? (d + " 天 " + h + " 小時後更新") : (d + " 天 " + h + " 小时后刷新");
+                } else if (/^Refreshes in (.+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Refreshes in (.+)$/i, (match, t) => {
+                        return translateTimeStr(t) + (USE_TW ? " 後更新" : " 后刷新");
                     });
-                } else if (/^Refreshes in (\d+) hours?, (\d+) minutes?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Refreshes in (\d+) hours?, (\d+) minutes?$/i, (match, h, m) => {
-                        return USE_TW ? (h + " 小時 " + m + " 分鐘後更新") : (h + " 小时 " + m + " 分钟后刷新");
+                } else if (/^You have (used (?:some|all) of|reached) your (weekly|5-hour|five hour) limit, it will fully refresh in (.+?)\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^You have (used (?:some|all) of|reached) your (weekly|5-hour|five hour) limit, it will fully refresh in (.+?)\.?$/i, (match, action, limitType, time) => {
+                        const is5h = /5-hour|five hour/i.test(limitType);
+                        const isAll = /all|reached/i.test(action);
+                        const typeStr = is5h ? (USE_TW ? '5 小時' : '5 小时') : (USE_TW ? '每週' : '每周');
+                        const actionStr = isAll ? (USE_TW ? '已用完 ' : '已用尽 ') : (USE_TW ? '已使用了部分 ' : '已使用了部分 ');
+                        const timeStr = translateTimeStr(time);
+                        return USE_TW 
+                            ? ('您' + actionStr + typeStr + '限制，將在 ' + timeStr + '後完全更新。')
+                            : ('您' + actionStr + typeStr + '限额，将在 ' + timeStr + '后完全刷新。');
                     });
-                } else if (/^Refreshes in (\d+) days?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Refreshes in (\d+) days?$/i, (match, d) => {
-                        return USE_TW ? (d + " 天後更新") : (d + " 天后刷新");
+                } else if (/^(Show|Hide)\s+(\d+)\s+breakdowns?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^(Show|Hide)\s+(\d+)\s+breakdowns?$/i, (match, action, num) => {
+                        const isShow = action.toLowerCase() === 'show';
+                        return USE_TW ? ((isShow ? '顯示 ' : '隱藏 ') + num + ' 項明細') : ((isShow ? '显示 ' : '隐藏 ') + num + ' 项明细');
                     });
-                } else if (/^Refreshes in (\d+) hours?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Refreshes in (\d+) hours?$/i, (match, h) => {
-                        return USE_TW ? (h + " 小時後更新") : (h + " 小时后刷新");
+                } else if (/^(Show|Hide)\s+breakdowns?$/i.test(valNorm)) {
+                    const isShow = /show/i.test(valNorm);
+                    newVal = isShow ? (USE_TW ? '顯示用量明細' : '显示用量明细') : (USE_TW ? '隱藏用量明細' : '隐藏用量明细');
+                } else if (/^Rules\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Rules\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i, (match, tok, pct) => {
+                        return (USE_TW ? "規則預設 (" : "规则预设 (") + tok + " Token) " + pct;
                     });
-                } else if (/^Refreshes in (\d+) minutes?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Refreshes in (\d+) minutes?$/i, (match, m) => {
-                        return USE_TW ? (m + " 分鐘後更新") : (m + " 分钟后刷新");
+                } else if (/^Skills\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Skills\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i, (match, tok, pct) => {
+                        return (USE_TW ? "技能預設 (" : "技能预设 (") + tok + " Token) " + pct;
                     });
-                } else if (/^You have used some of your weekly limit, it will fully refresh in (\d+) days?, (\d+) hours?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your weekly limit, it will fully refresh in (\d+) days?, (\d+) hours?\.?$/i, (match, d, h) => {
-                        return USE_TW ? ("您已使用了部分每週限制，將在 " + d + " 天 " + h + " 小時後完全更新。") : ("您已使用了部分每周限制，将在 " + d + " 天 " + h + " 小时后完全刷新。");
+                } else if (/^MCP Tools\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^MCP Tools\s*\((.+?)\s*tokens?\)\s*([\d\.]+%?)$/i, (match, tok, pct) => {
+                        return "MCP 工具 (" + tok + " Token) " + pct;
                     });
-                } else if (/^You have used some of your weekly limit, it will fully refresh in (\d+) days?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your weekly limit, it will fully refresh in (\d+) days?\.?$/i, (match, d) => {
-                        return USE_TW ? ("您已使用了部分每週限制，將在 " + d + " 天後完全更新。") : ("您已使用了部分每周限制，将在 " + d + " 天后完全刷新。");
+                } else if (/^Rules\s*(\d+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Rules\s*(\d+)$/i, (match, num) => {
+                        return (USE_TW ? "規則預設 " : "规则预设 ") + num;
                     });
-                } else if (/^You have used some of your weekly limit, it will fully refresh in (\d+) hours?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your weekly limit, it will fully refresh in (\d+) hours?\.?$/i, (match, h) => {
-                        return USE_TW ? ("您已使用了部分每週限制，將在 " + h + " 小時後完全更新。") : ("您已使用了部分每周限制，将在 " + h + " 小时后完全刷新。");
+                } else if (/^Rules\s*\((\d+)\)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Rules\s*\((\d+)\)$/i, (match, num) => {
+                        return (USE_TW ? "規則預設 (" : "规则预设 (") + num + ")";
                     });
-                } else if (/^You have used some of your weekly limit, it will fully refresh in (\d+) minutes?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your weekly limit, it will fully refresh in (\d+) minutes?\.?$/i, (match, m) => {
-                        return USE_TW ? ("您已使用了部分每週限制，將在 " + m + " 分鐘後完全更新。") : ("您已使用了部分每周限制，将在 " + m + " 分钟后完全刷新。");
+                } else if (/^(.+?)\s+including\s+(\d+)\s+active\s+conversations?\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^(.+?)\s+including\s+(\d+)\s+active\s+conversations?\.?$/i, (match, proj, num) => {
+                        return USE_TW ? (proj + '（包含 ' + num + ' 個作用中對話）') : (proj + '（包含 ' + num + ' 个活跃会话）');
                     });
-                } else if (/^You have used some of your 5-hour limit, it will fully refresh in (\d+) hours?, (\d+) minutes?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your 5-hour limit, it will fully refresh in (\d+) hours?, (\d+) minutes?\.?$/i, (match, h, m) => {
-                        return USE_TW ? ("您已使用了部分 5 小時限制，將在 " + h + " 小時 " + m + " 分鐘後完全更新。") : ("您已使用了部分 5 小时限制，将在 " + h + " 小时 " + m + " 分钟后完全刷新。");
+                } else if (/^including\s+(\d+)\s+active\s+conversations?\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^including\s+(\d+)\s+active\s+conversations?\.?$/i, (match, num) => {
+                        return USE_TW ? ('包含 ' + num + ' 個作用中對話') : ('包含 ' + num + ' 个活跃会话');
                     });
-                } else if (/^You have used some of your 5-hour limit, it will fully refresh in (\d+) hours?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your 5-hour limit, it will fully refresh in (\d+) hours?\.?$/i, (match, h) => {
-                        return USE_TW ? ("您已使用了部分 5 小時限制，將在 " + h + " 小時後完全更新。") : ("您已使用了部分 5 小时限制，将在 " + h + " 小时后完全刷新。");
-                    });
-                } else if (/^You have used some of your 5-hour limit, it will fully refresh in (\d+) minutes?\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^You have used some of your 5-hour limit, it will fully refresh in (\d+) minutes?\.?$/i, (match, m) => {
-                        return USE_TW ? ("您已使用了部分 5 小時限制，將在 " + m + " 分鐘後完全更新。") : ("您已使用了部分 5 小时限制，将在 " + m + " 分钟后完全刷新。");
-                    });
-                } else if (/^Learn more about (.+)$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Learn more about (.+)$/i, (match, p) => {
-                        let translatedPreset = p;
-                        if (p.toLowerCase() === 'default') translatedPreset = USE_TW ? "預設 (Default)" : "默认 (Default)";
-                        else if (p.toLowerCase() === 'full machine') translatedPreset = USE_TW ? "全機存取 (Full Machine)" : "全机访问 (Full Machine)";
-                        else if (p.toLowerCase() === 'turbo mode') translatedPreset = USE_TW ? "極速模式 (Turbo Mode)" : "极速模式 (Turbo Mode)";
-                        else if (p.toLowerCase() === 'custom') translatedPreset = USE_TW ? "自訂 (Custom)" : "自定义 (Custom)";
-                        return USE_TW ? ("瞭解更多關於 " + translatedPreset + " 的詳細資訊") : ("了解更多关于 " + translatedPreset + " 的信息");
+                } else if (/^Learn more about\s*(.*)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Learn more about\s*(.*)$/i, (match, p) => {
+                        const trimmed = (p || '').trim();
+                        if (!trimmed) return USE_TW ? '瞭解更多關於' : '了解更多关于';
+                        let tp = trimmed;
+                        if (/turbo mode|极速模式|極速模式/i.test(tp)) tp = USE_TW ? '極速模式 (Turbo Mode)' : '极速模式 (Turbo Mode)';
+                        else if (/default|默认|預設/i.test(tp)) tp = USE_TW ? '預設 (Default)' : '默认 (Default)';
+                        else if (/full machine|全机|全機/i.test(tp)) tp = USE_TW ? '全機存取 (Full Machine)' : '全机访问 (Full Machine)';
+                        else if (/custom|自定义|自訂/i.test(tp)) tp = USE_TW ? '自訂 (Custom)' : '自定义 (Custom)';
+                        else if (map.has(trimmed)) tp = map.get(trimmed);
+                        else if (lowerMap.has(trimmed.toLowerCase())) tp = lowerMap.get(trimmed.toLowerCase());
+                        return USE_TW ? ('瞭解更多關於 ' + tp + ' 的詳細資訊') : ('了解更多关于 ' + tp + ' 的信息');
                     });
                 } else if (/^Yes, and always allow '(.+)' in this project$/i.test(valNorm)) {
                     newVal = valNorm.replace(/^Yes, and always allow '(.+)' in this project$/i, (match, cmd) => {
@@ -979,8 +998,54 @@ function install20(resourcesDir) {
                 buttons: ['确定'],`;
         
         updaterContent = updaterContent.replace(targetOptions, replacementOptions);
+
+        // 替换 MenuUpdateStep 枚举
+        if (USE_TW) {
+            updaterContent = updaterContent.replace('MenuUpdateStep["CheckForUpdates"] = "Check for Updates";', 'MenuUpdateStep["CheckForUpdates"] = "檢查更新";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["CheckingForUpdates"] = "Checking for Updates...";', 'MenuUpdateStep["CheckingForUpdates"] = "正在檢查更新...";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["DownloadingUpdate"] = "Downloading Update...";', 'MenuUpdateStep["DownloadingUpdate"] = "正在下載更新...";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["RestartToUpdate"] = "Restart to Update";', 'MenuUpdateStep["RestartToUpdate"] = "重啟以安裝更新";');
+        } else {
+            updaterContent = updaterContent.replace('MenuUpdateStep["CheckForUpdates"] = "Check for Updates";', 'MenuUpdateStep["CheckForUpdates"] = "检查更新";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["CheckingForUpdates"] = "Checking for Updates...";', 'MenuUpdateStep["CheckingForUpdates"] = "正在检查更新...";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["DownloadingUpdate"] = "Downloading Update...";', 'MenuUpdateStep["DownloadingUpdate"] = "正在下载更新...";');
+            updaterContent = updaterContent.replace('MenuUpdateStep["RestartToUpdate"] = "Restart to Update";', 'MenuUpdateStep["RestartToUpdate"] = "重启以安装更新";');
+        }
+
         fs.writeFileSync(updaterPath, updaterContent, 'utf-8');
         console.log(`[修改] 更新弹窗汉化注入成功！`);
+    }
+
+    // 3.5 注入 ideInstall/wizardHtml.js (IDE 安装向导汉化)
+    const wizardHtmlPath = path.join(tempDir, "dist", "ideInstall", "wizardHtml.js");
+    if (fs.existsSync(wizardHtmlPath)) {
+        console.log(`[修改] 正在向 wizardHtml.js 注入 IDE 安装向导汉化...`);
+        let wizardContent = fs.readFileSync(wizardHtmlPath, 'utf-8');
+        
+        const wizardReplacements = USE_TW ? [
+            ['<title>Welcome to Antigravity</title>', '<title>歡迎使用 Antigravity</title>'],
+            ['Setting up…', '正在設定…'],
+            ['Setting up...', '正在設定...'],
+            ['Welcome to the new Antigravity!', '歡迎體驗全新 Antigravity！'],
+            ["Antigravity has been redesigned to put agents first with new capabilities. If you'd still like a code editor, you can download it as a separate app named <b>Antigravity IDE</b>.", "Antigravity 經過全面重構，以智慧體為核心並帶來了全新能力。如果您仍需要程式碼編輯器，可以將其作為獨立應用程式 <b>Antigravity IDE</b> 進行下載。"],
+            ['Download the Antigravity IDE', '下載 Antigravity IDE'],
+            ['Explore the new Antigravity', '探索全新 Antigravity']
+        ] : [
+            ['<title>Welcome to Antigravity</title>', '<title>欢迎使用 Antigravity</title>'],
+            ['Setting up…', '正在配置…'],
+            ['Setting up...', '正在配置...'],
+            ['Welcome to the new Antigravity!', '欢迎体验全新 Antigravity！'],
+            ["Antigravity has been redesigned to put agents first with new capabilities. If you'd still like a code editor, you can download it as a separate app named <b>Antigravity IDE</b>.", "Antigravity 经过全面重构，以智能体为核心并带来了全新能力。如果您仍需要代码编辑器，可以将其作为独立应用 <b>Antigravity IDE</b> 进行下载。"],
+            ['Download the Antigravity IDE', '下载 Antigravity IDE'],
+            ['Explore the new Antigravity', '探索全新 Antigravity']
+        ];
+
+        for (const [target, repl] of wizardReplacements) {
+            wizardContent = wizardContent.replace(target, repl);
+        }
+
+        fs.writeFileSync(wizardHtmlPath, wizardContent, 'utf-8');
+        console.log(`[修改] IDE 安装向导汉化注入成功！`);
     }
 
     // 4. 重新打包
