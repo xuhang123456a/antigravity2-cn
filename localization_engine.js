@@ -63,6 +63,7 @@ if (USE_TW) {
         "[!] 未找到备份文件 app.asar.bak，可能尚未安装过汉化或备份被删除。": "[!] 未找到備份檔案 app.asar.bak，可能尚未安裝過漢化或備份已被刪除。",
         "[还原] 正在用官方备份文件恢复...": "[還原] 正在用官方備份檔案恢復...",
         "[还原] 已重置当前 app.asar 为官方原始备份包，以进行全新注入...": "[還原] 已重置目前 app.asar 為官方原始備份包，以進行全新注入...",
+        "[权限] 检测到当前用户对 macOS 应用目录缺少写入权限，正在尝试请求管理员权限 (sudo) 重新运行...": "[權限] 偵測到目前使用者對 macOS 應用程式目錄缺少寫入權限，正在嘗試請求管理員權限 (sudo) 重新執行...",
         "[提示] 当前 app.asar 被锁定（可能是客户端正在运行），将使用当前包进行增量注入。": "[提示] 目前 app.asar 被鎖定（可能是用戶端正在執行），將使用目前包進行增量注入。",
         "[还原] 已恢复 HTML: ": "[還原] 已恢復 HTML: ",
         "[还原] 已删除汉化脚本": "[還原] 已刪除漢化指令碼",
@@ -168,6 +169,7 @@ function generateJs() {
 (() => {
     // V12.0 终极隔离版：基于容器回溯的物理隔离引擎
     // 逻辑：不再仅仅检查当前标签，而是向上回溯父级，识别“代码/编辑器”禁区
+    const USE_TW = ${USE_TW ? "true" : "false"};
     const map = new Map(Object.entries(DICT_PLACEHOLDER));
     const lowerMap = new Map();
     for (const [k, v] of map.entries()) lowerMap.set(k.toLowerCase(), v);
@@ -175,9 +177,19 @@ function generateJs() {
     const longEntries = REPLACEMENT_ENTRIES_PLACEHOLDER;
     const translatedValues = new WeakMap();
 
-    // 禁区类名/属性特征
-    const BLOCKED_CLASSES = ['monaco-editor', 'editor-container', 'terminal', 'output-view', 'debug-console', 'code-view', 'artifact-container', 'suggest-widget', 'chat-bubble', 'chat-message', 'chat-line', 'chat-msg', 'message-item', 'conversation-item', 'chat-history', 'chat-container', 'chat-pane', 'ai-chat-bubble', 'user-chat-bubble'];
-    const BLOCKED_TAGS = ['SCRIPT', 'STYLE', 'CODE', 'PRE', 'INPUT', 'TEXTAREA', 'SVG', 'CANVAS', 'SYMBOL', 'PATH'];
+    // 轻量级安全隔离：跳过脚本、样式、代码块(pre/code)以及编辑器区域
+    const SKIP_TAGS = ['SCRIPT', 'STYLE', 'PRE', 'CODE'];
+
+    function isCodeOrEditor(node) {
+        try {
+            if (!node) return false;
+            const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+            if (!el || typeof el.closest !== 'function') return false;
+            return !!el.closest('pre, code, .monaco-editor, [contenteditable="true"]');
+        } catch (e) {
+            return false;
+        }
+    }
 
     function norm(s) {
         if (!s) return '';
@@ -204,121 +216,36 @@ function generateJs() {
         return null;
     }
 
-    // 核心隔离判断：回溯检查当前节点是否逻辑上属于“禁止汉化区”
-    function isInBlockedZone(node) {
-        let curr = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-        let depth = 0;
-        while (curr && depth < 12) { // 向上回溯 12 层
-            if (curr.nodeType === Node.ELEMENT_NODE) {
-                const tag = curr.tagName.toUpperCase();
-                if (BLOCKED_TAGS.includes(tag)) return true;
-                if (curr.getAttribute('contenteditable') === 'true') return true;
-
-                // 阻断常见的角色属性标识，如 data-role="user", data-author="user"
-                const dataRole = curr.getAttribute('data-role');
-                if (dataRole && /^(user|human|client|customer|my)$/i.test(dataRole)) return true;
-                const dataAuthor = curr.getAttribute('data-author');
-                if (dataAuthor && /^(user|human|client|customer|my)$/i.test(dataAuthor)) return true;
-                
-                // 阻断 ID 包含 chat, conversation, interactive 的容器
-                const id = curr.id || '';
-                if (typeof id === 'string') {
-                    const idLower = id.toLowerCase();
-                    if (idLower.includes('chat') || idLower.includes('conversation') || idLower.includes('interactive')) return true;
-                }
-
-                // 阻断 aria-label 包含 Chat, AI, Ask, conversation, interactive 的容器
-                const ariaLabel = curr.getAttribute('aria-label') || '';
-                if (ariaLabel) {
-                    const alLower = ariaLabel.toLowerCase();
-                    if (alLower.includes('chat') || alLower.includes('ai') || alLower.includes('ask') || alLower.includes('conversation') || alLower.includes('interactive')) return true;
-                }
-
-                const className = curr.className || '';
-                if (typeof className === 'string') {
-                    if (BLOCKED_CLASSES.some(cls => className.includes(cls))) return true;
-
-                    const clsLower = className.toLowerCase();
-                    // 阻断类名包含 chat, conversation, interactive 的容器
-                    if (clsLower.includes('chat') || clsLower.includes('conversation') || clsLower.includes('interactive')) return true;
-
-                    // 阻断各类用户/助理聊天消息气泡的变体
-                    if (/(^|\b|[-_])(user|human|client|customer|my|ai|bot|assistant)([-_]?(message|msg|bubble|query|chat|input|text|content))(\b|$)/i.test(className)) {
-                        return true;
-                    }
-                    if (/(^|\b|[-_])(message|msg|bubble|query|chat|input|text|content)([-_]?(user|human|client|customer|my|ai|bot|assistant))(\b|$)/i.test(className)) {
-                        return true;
-                    }
-                }
-            }
-            curr = curr.parentElement || (curr.parentNode && curr.parentNode.host); // 支持 Shadow DOM 穿透
-            depth++;
-        }
-        return false;
-    }
-
     function translateNode(node) {
         try {
             if (!node) return;
             
             if (node.nodeType === Node.ELEMENT_NODE) {
                 const tag = node.tagName.toUpperCase();
-                
-                // 给禁区元素打上 translate="no" 和 class="notranslate" 标记，物理防御网页自动翻译
-                let isBlocked = BLOCKED_TAGS.includes(tag);
-                if (!isBlocked) {
-                    const className = node.className || '';
-                    if (typeof className === 'string') {
-                        if (BLOCKED_CLASSES.some(cls => className.includes(cls))) {
-                            isBlocked = true;
-                        }
-                    }
-                }
-                if (node.getAttribute('contenteditable') === 'true') {
-                    isBlocked = true;
-                }
-                
-                if (isBlocked) {
-                    if (node.getAttribute('translate') !== 'no') {
-                        node.setAttribute('translate', 'no');
-                    }
-                    try {
-                        if (!node.classList.contains('notranslate')) {
-                            node.classList.add('notranslate');
-                        }
-                    } catch (e) {}
-                }
+                if (SKIP_TAGS.includes(tag)) return;
+                if (node.isContentEditable) return;
+                if (node.classList && node.classList.contains('monaco-editor')) return;
 
-                // 1. 快速排除基础禁止标签
-                if (BLOCKED_TAGS.includes(tag)) {
-                    // 对于 INPUT, TEXTAREA 和 SVG，虽然不翻译其子元素或内容，但需要翻译其 placeholder, title, aria-label 等属性
-                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SVG') {
-                        if (!isInBlockedZone(node.parentElement)) {
-                            for (const attr of ['placeholder', 'title', 'aria-label']) {
-                                const v = node.getAttribute(attr);
-                                if (v) {
-                                    const t = norm(v);
-                                    const shortcutTrans = translateWithShortcut(t);
-                                    if (shortcutTrans) node.setAttribute(attr, shortcutTrans);
-                                    else if (map.has(t)) node.setAttribute(attr, map.get(t));
-                                    else if (lowerMap.has(t.toLowerCase())) node.setAttribute(attr, lowerMap.get(t.toLowerCase()));
+                // 翻译属性：placeholder, title, aria-label
+                for (const attr of ['placeholder', 'title', 'aria-label']) {
+                    const v = node.getAttribute(attr);
+                    if (v) {
+                        const t = norm(v);
+                        const shortcutTrans = translateWithShortcut(t);
+                        if (shortcutTrans) node.setAttribute(attr, shortcutTrans);
+                        else if (map.has(t)) node.setAttribute(attr, map.get(t));
+                        else if (lowerMap.has(t.toLowerCase())) node.setAttribute(attr, lowerMap.get(t.toLowerCase()));
+                        else if (/^Show\\s+(\\d+)\\s+more/i.test(t)) {
+                            const trans = t.replace(/^Show\\s+(\\d+)\\s+more(\\s+(results?|items?|commands?|options?))?(\\.\\.\\.|…)?$/i, (m, num, p2, type) => {
+                                if (type) {
+                                    if (/result/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個結果...") : ("显示另外 " + num + " 个结果...");
+                                    if (/command/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個命令...") : ("显示另外 " + num + " 个命令...");
+                                    if (/item/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個項目...") : ("显示另外 " + num + " 个项目...");
+                                    if (/option/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個選項...") : ("显示另外 " + num + " 个选项...");
                                 }
-                            }
-                        }
-                    }
-                    return;
-                }
-                
-                // 2. 只有当确实不在禁区时，才翻译其属性
-                if (!isInBlockedZone(node)) {
-                    for (const attr of ['placeholder', 'title', 'aria-label']) {
-                        const v = node.getAttribute(attr);
-                        if (v) {
-                            const t = norm(v);
-                            const shortcutTrans = translateWithShortcut(t);
-                            if (shortcutTrans) node.setAttribute(attr, shortcutTrans);
-                            else if (map.has(t)) node.setAttribute(attr, map.get(t));
-                            else if (lowerMap.has(t.toLowerCase())) node.setAttribute(attr, lowerMap.get(t.toLowerCase()));
+                                return USE_TW ? ("顯示另外 " + num + " 個...") : ("显示另外 " + num + " 个...");
+                            });
+                            node.setAttribute(attr, trans);
                         }
                     }
                 }
@@ -327,6 +254,8 @@ function generateJs() {
                 for (const child of node.childNodes) translateNode(child);
 
             } else if (node.nodeType === Node.TEXT_NODE) {
+                if (isCodeOrEditor(node)) return;
+
                 let originalVal = node.nodeValue;
                 if (!originalVal || originalVal.trim().length < 1) return;
 
@@ -345,9 +274,6 @@ function generateJs() {
                     }
                     return;
                 }
-
-                // 核心：在处理文本节点前，必须确认其不在“禁止区”
-                if (isInBlockedZone(node)) return;
 
                 if (translatedValues.get(node) === originalVal) return;
 
@@ -455,24 +381,30 @@ function generateJs() {
                     newVal = valNorm.replace(/^(\\d+) tools? enabled$/i, (match, num) => {
                         return USE_TW ? (num + " 個工具已啟用") : (num + " 个工具已启用");
                     });
-                } else if (/^Show (\d+) more(\.\.\.|…)?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Show (\d+) more(\.\.\.|…)?$/i, (match, num) => {
+                } else if (/^Show\\s+(\\d+)\\s+more(\\s+(results?|items?|commands?|options?))?(\\.\\.\\.|…)?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Show\\s+(\\d+)\\s+more(\\s+(results?|items?|commands?|options?))?(\\.\\.\\.|…)?$/i, (match, num, p2, type) => {
+                        if (type) {
+                            if (/result/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個結果...") : ("显示另外 " + num + " 个结果...");
+                            if (/command/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個命令...") : ("显示另外 " + num + " 个命令...");
+                            if (/item/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個項目...") : ("显示另外 " + num + " 个项目...");
+                            if (/option/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個選項...") : ("显示另外 " + num + " 个选项...");
+                        }
                         return USE_TW ? ("顯示另外 " + num + " 個...") : ("显示另外 " + num + " 个...");
                     });
-                } else if (/^See all \((\d+)\)$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^See all \((\d+)\)$/i, (match, num) => {
+                } else if (/^See all\\s*\\((\\d+)\\)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^See all\\s*\\((\\d+)\\)$/i, (match, num) => {
                         return USE_TW ? ("顯示全部 (" + num + ")") : ("显示全部 (" + num + ")");
                     });
-                } else if (/^Available AI Credits: (\d+)$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Available AI Credits: (\d+)$/i, (match, num) => {
+                } else if (/^Available AI Credits: (\\d+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Available AI Credits: (\\d+)$/i, (match, num) => {
                         return USE_TW ? ("可用 AI 額度: " + num) : ("可用 AI 额度: " + num);
                     });
-                } else if (/^Version\s+([\d\.]+)$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^Version\s+([\d\.]+)$/i, (match, v) => {
+                } else if (/^Version\\s+([\\d\\.]+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Version\\s+([\\d\\.]+)$/i, (match, v) => {
                         return "版本 " + v;
                     });
-                } else if (/^(\d+)(s|m|h|d|w|mo|yr)$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^(\d+)(s|m|h|d|w|mo|yr)$/i, (match, num, unit) => {
+                } else if (/^(\\d+)(s|m|h|d|w|mo|yr)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^(\\d+)(s|m|h|d|w|mo|yr)$/i, (match, num, unit) => {
                         const unitLower = unit.toLowerCase();
                         let unitStr = "";
                         if (unitLower === "s") unitStr = USE_TW ? "秒前" : "秒前";
@@ -500,9 +432,16 @@ function generateJs() {
                     newVal = valNorm.replace(/^The (.+?) remote MCP server lets you access and run (.+?) tools to (.+)$/i, (match, name, tools, action) => {
                         return name + (USE_TW ? " 遠端 MCP 伺服器可讓您存取並執行 " : " 远程 MCP 服务器可让您访问并运行 ") + tools + (USE_TW ? " 工具以進行管理與操作。" : " 工具以进行管理与操作。");
                     });
-                } else if (/^The (.+?) remote MCP server lets you manage (.+) resources\.?$/i.test(valNorm)) {
-                    newVal = valNorm.replace(/^The (.+?) remote MCP server lets you manage (.+) resources\.?$/i, (match, name, res) => {
+                } else if (/^The (.+?) remote MCP server lets you manage (.+) resources\\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^The (.+?) remote MCP server lets you manage (.+) resources\\.?$/i, (match, name, res) => {
                         return name + (USE_TW ? " 遠端 MCP 伺服器可讓您管理 " : " 远程 MCP 服务器可让您管理 ") + res + (USE_TW ? " 資源。" : " 资源。");
+                    });
+                } else if (/^Send feedback as(\\s+(.+))?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Send feedback as(\\s+(.+))?$/i, (match, p1, email) => {
+                        if (email) {
+                            return "以 " + email + (USE_TW ? " 身分傳送意見回饋" : " 身份发送反馈");
+                        }
+                        return USE_TW ? "以此身分傳送意見回饋：" : "以如下身份发送反馈：";
                     });
                 } else {
                     // 2. 长句子串滑动替换与前缀截断智能匹配 (缩短至前 18 字符即可高精度命中)
@@ -594,7 +533,14 @@ function cleanTrayJsContent(content) {
     const startIdx = content.indexOf(startMark);
     const endIdx = content.indexOf(endMark);
     if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
-        return content.substring(0, startIdx) + content.substring(endIdx + endMark.length);
+        content = content.substring(0, startIdx) + content.substring(endIdx + endMark.length);
+    }
+    const dblStartMark = "/* --- TRAY DOUBLE CLICK START --- */";
+    const dblEndMark = "/* --- TRAY DOUBLE CLICK END --- */";
+    const dblStartIdx = content.indexOf(dblStartMark);
+    const dblEndIdx = content.indexOf(dblEndMark);
+    if (dblStartIdx !== -1 && dblEndIdx !== -1 && dblStartIdx < dblEndIdx) {
+        content = content.substring(0, dblStartIdx) + content.substring(dblEndIdx + dblEndMark.length);
     }
     return content;
 }
@@ -757,6 +703,29 @@ function resignAppOnMac(anyPath) {
     }
 }
 
+function ensureWritePermission(targetDir) {
+    if (process.platform !== 'darwin') return true;
+    try {
+        fs.accessSync(targetDir, fs.constants.W_OK);
+        return true;
+    } catch (err) {
+        if (process.getuid && process.getuid() !== 0) {
+            console.log("[权限] 检测到当前用户对 macOS 应用目录缺少写入权限，正在尝试请求管理员权限 (sudo) 重新运行...");
+            const args = process.argv.slice(1);
+            const res = child_process.spawnSync('sudo', [process.execPath, ...args], {
+                stdio: 'inherit'
+            });
+            if (res.status === 0) {
+                process.exit(0);
+            } else {
+                console.error("\n[错误] 管理员提权执行失败或用户取消了密码输入。");
+                process.exit(res.status || 1);
+            }
+        }
+        return false;
+    }
+}
+
 // ==========================================
 // Antigravity 2.0 汉化引擎 (ASAR打包注入模式)
 // ==========================================
@@ -772,8 +741,16 @@ function install20(resourcesDir) {
     // 1. 备份
     if (!fs.existsSync(bakPath)) {
         console.log(`[备份] 正在创建官方原始包备份: app.asar.bak ...`);
-        fs.copyFileSync(asarPath, bakPath);
-        console.log(`[备份] 备份成功！`);
+        try {
+            fs.copyFileSync(asarPath, bakPath);
+            console.log(`[备份] 备份成功！`);
+        } catch (e) {
+            console.error(`[错误] 创建备份失败: ${e.message}`);
+            if (process.platform === 'darwin' && e.code === 'EPERM') {
+                console.error(`[提示] macOS 写入受限，请使用管理员权限运行脚本。`);
+            }
+            return false;
+        }
     } else {
         // 尝试用官方备份覆盖当前 app.asar，以确保每次汉化都基于最干净的官方英文包
         try {
@@ -951,7 +928,24 @@ function install20(resourcesDir) {
         
         let trayPatched = trayCleaned.replace(targetCreate, replacementCreate);
         
-        // 2. 使用正则替换 updateTrayAgentCount 里的动态显示文本
+        // 2. 注入托盘图标双击弹出/聚焦 Antigravity 界面事件
+        const dblClickTarget = /tray\.setContextMenu\(contextMenu\);/;
+        const dblClickReplacement = `tray.setContextMenu(contextMenu);
+    /* --- TRAY DOUBLE CLICK START --- */
+    const openAction = actions.find(item => item && typeof item.click === 'function' && !['Quit', '退出', '結束'].includes(item.label));
+    if (openAction) {
+        tray.on('double-click', () => {
+            const wins = electron_1.BrowserWindow.getAllWindows();
+            if (wins.length > 0 && wins[0].isMinimized()) {
+                wins[0].restore();
+            }
+            openAction.click();
+        });
+    }
+    /* --- TRAY DOUBLE CLICK END --- */`;
+        trayPatched = trayPatched.replace(dblClickTarget, dblClickReplacement);
+
+        // 3. 使用正则替换 updateTrayAgentCount 里的动态显示文本
         const countRegex = /countItem\.label\s*=\s*\([\s\S]*?' running';/g;
         const replacementCount = USE_TW 
             ? "countItem.label = count > 0 ? `${count} 個智能體執行中` : '無執行中的智能體';"
@@ -1076,8 +1070,16 @@ function restore20(resourcesDir) {
     }
 
     console.log("[还原] 正在用官方备份文件恢复...");
-    fs.copyFileSync(bakPath, asarPath);
-    fs.unlinkSync(bakPath);
+    try {
+        fs.copyFileSync(bakPath, asarPath);
+        fs.unlinkSync(bakPath);
+    } catch (e) {
+        console.error(`[错误] 恢复备份失败: ${e.message}`);
+        if (process.platform === 'darwin' && e.code === 'EPERM') {
+            console.error(`[提示] macOS 写入受限，请使用管理员权限运行脚本。`);
+        }
+        return false;
+    }
     resignAppOnMac(resourcesDir);
     console.log("[√] 官方 app.asar 已成功恢复！");
     return true;
@@ -1248,6 +1250,8 @@ function main() {
         console.error(`[错误] 无法定位有效的资源(resources)目录: ${resourcesDir}`);
         process.exit(1);
     }
+
+    ensureWritePermission(resourcesDir);
 
     // 4. 根据架构执行
     const asarPath = path.join(resourcesDir, "app.asar");

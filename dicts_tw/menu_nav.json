@@ -61,5 +61,20 @@
     "Open Keyboard Shortcuts": "開啟鍵盤快捷鍵",
     "Copy conversation markdown": "複製會話 Markdown",
     "Open Command Palette": "開啟命令面板",
-    "Open Project Picker": "開啟專案選擇器"
+    "Open Project Picker": "開啟專案選擇器",
+    "Collapse All Folders": "摺疊所有資料夾",
+    "Expand All Folders": "展開所有資料夾",
+    "Next Aux Pane Tab": "下一個輔助面板分頁",
+    "Previous Aux Pane Tab": "上一個輔助面板分頁",
+    "← Previous Aux Pane Tab": "← 上一個輔助面板分頁",
+    "→ Next Aux Pane Tab": "→ 下一個輔助面板分頁",
+    "Download Diagnostics": "下載診斷資訊",
+    "New Terminal Tab": "新增終端機分頁",
+    "Toggle Project Selector": "切換專案選擇器",
+    "Toggle Environment Selector": "切換環境選擇器",
+    "Toggle Aux Pane": "切換輔助面板",
+    "Show more...": "顯示更多...",
+    "Show more": "顯示更多",
+    "Show less": "收起",
+    "Show less...": "收起..."
 }

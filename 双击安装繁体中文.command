@@ -1,5 +1,15 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+
+# 檢查管理員權限，若不是 root 則自動透過 sudo 提權
+if [ "$EUID" -ne 0 ]; then
+    echo "======================================================"
+    echo " 提示：macOS 系統修改應用程式（/Applications）需要管理員權限"
+    echo " 請在下方輸入您的電腦開機密碼（輸入時密碼不顯示，直接 Enter）："
+    echo "======================================================"
+    exec sudo bash "$0" "$@"
+fi
+
 echo "====== 正在安裝 macOS 版 Antigravity 繁體中文漢化 ======"
 echo "請選擇左上角品牌顯示方式："
 echo "[1] 顯示英文 Antigravity（推薦）"
