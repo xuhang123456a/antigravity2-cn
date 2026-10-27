@@ -443,7 +443,35 @@ function generateJs() {
                         }
                         return USE_TW ? "以此身分傳送意見回饋：" : "以如下身份发送反馈：";
                     });
-                } else {
+                                } else if (/^Setting up WSL:\\s*(.+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Setting up WSL:\\s*(.+)$/i, (match, d) => {
+                        return (USE_TW ? "正在設定 WSL: " : "正在配置 WSL: ") + d;
+                    });
+                } else if (/^Installing into\\s*(.+)…$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Installing into\\s*(.+)…$/i, (match, d) => {
+                        return (USE_TW ? "正在安裝至 " : "正在安装至 ") + d + "…";
+                    });
+                } else if (/^No plugins found for\\s*(.+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^No plugins found for\\s*(.+)$/i, (match, q) => {
+                        return USE_TW ? ("未找到相符「" + q + "」的外掛程式") : ("未找到匹配“" + q + "”的插件");
+                    });
+                } else if (/^No MCP servers found for\\s*(.+)$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^No MCP servers found for\\s*(.+)$/i, (match, q) => {
+                        return USE_TW ? ("未找到相符「" + q + "」的 MCP 伺服器") : ("未找到匹配“" + q + "”的 MCP 服务器");
+                    });
+                } else if (/^Refreshed credentials for (\\d+) automations?\\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Refreshed credentials for (\\d+) automations?\\.?$/i, (match, num) => {
+                        return USE_TW ? ("已重新整理 " + num + " 項自動化任務的憑證。") : ("已刷新 " + num + " 项自动化任务的凭证。");
+                    });
+                } else if (/^(\\d+)\\s+plugins?\\s+available\\.?$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^(\\d+)\\s+plugins?\\s+available\\.?$/i, (match, num) => {
+                        return USE_TW ? (num + " 個外掛程式可用") : (num + " 个插件可用");
+                    });
+                } else if (/^Search for [\"'](.+)[\"'] in the Marketplace$/i.test(valNorm)) {
+                    newVal = valNorm.replace(/^Search for [\"'](.+)[\"'] in the Marketplace$/i, (match, q) => {
+                        return USE_TW ? ("在外掛程式市場中搜尋「" + q + "」") : ("在插件市场中搜索“" + q + "”");
+                    });
+} else {
                     // 2. 长句子串滑动替换与前缀截断智能匹配 (缩短至前 18 字符即可高精度命中)
                     for (const [key, translated] of longEntries) {
                         if (key.length > 15 && valNorm.includes(key)) {
@@ -907,16 +935,22 @@ function install20(resourcesDir) {
         let trayCleaned = cleanTrayJsContent(trayContent);
         
         // 1. 注入 createTray 里的翻译块 (带标记)
-        const targetCreate = "function createTray(actions) {";
+        const targetCreate = /function createTray\(actions(?:,\s*onClick)?\)\s*\{/;
         const replacementCreate = `function createTray(actions) {
     /* --- TRAY TRANSLATION START --- */
     const translations = ${USE_TW ? `{
         'No agents running': '無執行中的智能體',
         'Open Antigravity': '開啟反重力智能編程',
+        'Focus': '顯示主視窗',
+        'Connect to WSL': '連線到 WSL',
+        'Reopen Locally': '在本地重新開啟',
         'Quit': '退出'
     }` : `{
         'No agents running': '无运行中的智能体',
         'Open Antigravity': '打开反重力智能编程',
+        'Focus': '显示主窗口',
+        'Connect to WSL': '连接到 WSL',
+        'Reopen Locally': '在本地重新打开',
         'Quit': '退出'
     }`};
     for (const item of actions) {
@@ -944,6 +978,19 @@ function install20(resourcesDir) {
     }
     /* --- TRAY DOUBLE CLICK END --- */`;
         trayPatched = trayPatched.replace(dblClickTarget, dblClickReplacement);
+
+        // 注入 insertTrayMenuItem 翻译 (针对 WSL 等异步插入项)
+        const insertTarget = "function insertTrayMenuItem(position, options) {";
+        const insertRepl = "function insertTrayMenuItem(position, options) {\n    const extraTrans = " + (USE_TW ? JSON.stringify({
+            'Connect to WSL': '連線到 WSL',
+            'Reopen Locally': '在本地重新開啟'
+        }) : JSON.stringify({
+            'Connect to WSL': '连接到 WSL',
+            'Reopen Locally': '在本地重新打开'
+        })) + ";\n    if (options && options.label && extraTrans[options.label]) options.label = extraTrans[options.label];";
+        if (trayPatched.includes(insertTarget)) {
+            trayPatched = trayPatched.replace(insertTarget, insertRepl);
+        }
 
         // 3. 使用正则替换 updateTrayAgentCount 里的动态显示文本
         const countRegex = /countItem\.label\s*=\s*\([\s\S]*?' running';/g;

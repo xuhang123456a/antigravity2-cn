@@ -76,5 +76,10 @@
     "Show more...": "顯示更多...",
     "Show more": "顯示更多",
     "Show less": "收起",
-    "Show less...": "收起..."
+    "Show less...": "收起...",
+    "Connect to WSL": "連線到 WSL",
+    "Reopen Locally": "在本地重新開啟",
+    "Setting up WSL": "正在設定 WSL",
+    "Downloading the Antigravity binary…": "正在下載 Antigravity 二進位程式…",
+    "Installing into": "正在安裝到"
 }
