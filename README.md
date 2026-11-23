@@ -3,19 +3,11 @@
 👉 **[繁體中文版說明文件 (Traditional Chinese README)](README_TW.md)**
 
 > **支持系统**：Windows & macOS (均已内置一键脚本)  
-> **匹配版本**：Antigravity v2.2.1 ~ v2.26.x (全版本兼容)  
-> **核心引擎**：Node.js (无需安装 Python，零依赖，极速极稳)  
-> **汉化范围**：包括软件界面、顶部系统菜单、任务栏右键菜单、加载动画、设置面板、新手引导及登录页。  
-> **注入原理**：通过 ASAR 还原与重包，安全注入 `preload.js` 动态翻译机制，绝不修改核心二进制，一键安装与完美还原。
+> **匹配版本**：Antigravity v2.33.0+  
 
-> [!WARNING]
-> **关于聊天历史记录/对话框内容被汉化的已知问题及匹配机制说明（开发者必读）**：
-> - **现象**：当你在聊天或对话框中发送了某些与软件界面 UI 完全相同的英文关键词或句子时，该对话气泡在界面上可能会被翻译引擎汉化显示。
-> - **核心匹配机制**：
->   - **短词（长度 <= 15 字符，如 `Knowledge`）**：翻译仅在词条 **完全精准匹配（且单独占一行）** 时触发。如果该词前后有其他任何字符、空格或标点符号（如 `Knowledge是什么`、`哈哈 Knowledge`），则 **绝对不会** 被翻译。如果需要强行阻止其翻译，可使用中文双引号将其包裹（如 `“Knowledge”`）即可完美规避。
->   - **长句（长度 > 15 字符，如 `Enable Antigravity to deploy apps...`）**：由于需要兼容界面动态渲染，长句采用 **“子串滑动替换”** 算法。这意味着只要输入的文本中包含了这一长串完整英文字句，该段子串就会被自动翻译成中文（即使加了引号或前后带有文字）。但由于长句匹配极其苛刻，必须一字不差（包括大小写、标点和空格），因此实际聊天中几乎不可能误触发。
-> - **说明**：这**不影响 AI 接收到的原文**。大模型获取到的依旧是你发送的纯正英文原始指令，仅在软件的视觉渲染层面发生了汉化，纯属视觉影响，无需担心影响大模型的效果。
-> - **欢迎提 PR**：由于 Electron 沙箱及 iframe webview DOM 树隔离问题，此处难以直接利用主窗口类名隔离，期待有缘人提交 PR 完美解决该问题！
+> **核心引擎**：Node.js (无需安装 Python，零依赖，极速极稳)  
+> **汉化范围**：包括软件界面、鼠标悬浮提示 (Tooltip)、Sidecar 伴生面板（含 Swarm 面板与 `plugin://` 子框架）、顶部系统菜单、任务栏与原生系统右键菜单 (Context Menu)、主进程原生弹窗（退出确认、WSL/SSH 提示、设备与 Passkey 选择等）、更新弹窗、加载动画、设置面板、插件与自定义项、新手引导及登录页。  
+> **注入原理**：通过纯 Node.js 原生解析并校验重包 `app.asar`，安全注入前端 `preload.js` 动态隔离引擎与主进程补丁，绝不修改核心二进制，一键安装与无损还原。
 
 ## 📸 汉化效果展示
 
@@ -33,10 +25,16 @@
 ---
 
 ## 📂 项目文件结构
-- **`双击安装中文汉化.bat`** / **`.command`**：Windows / macOS 一键汉化执行入口。
+- **`双击安装中文汉化.bat`** / **`.command`**：Windows / macOS 一键简体汉化执行入口（另有对应繁体中文版脚本）。
 - **`双击卸载还原官方英文.bat`** / **`.command`**：Windows / macOS 一键完美恢复原版入口。
-- **`localization_engine.js`**：核心汉化逻辑，负责 app.asar 的解包、代码注入、重新打包以及 macOS 下的自动深度重签名。
-- **`dicts/`**：汉化字典文件夹，内含按模块分类的 JSON 对照翻译字典。
+- **`localization_engine.js`**：核心汉化调度引擎，负责环境探测、进程锁释放、词典编译、缓存清理及 macOS `Info.plist` 校验与自动重签名。
+- **`src/`**：模块化核心源码：
+  - `preload_runtime.js`：前端 DOM 动态隔离与表驱动正则引擎（含内容隔离、Shadow DOM 穿透与原生右键菜单钩子）。
+  - `main_patches.js`：主进程补丁集（`preload.js`、`utils.js` Sidecar 注入、`menu.js`、`tray.js`、`loadingOverlay.js`、`updater.js` 及 `main.js` 等原生弹窗模块）。
+  - `asar_patcher.js`：零依赖纯 Node.js 二进制 ASAR 读取、补丁写入与候选包完整性校验器。
+- **`dicts/`** / **`dicts_tw/`**：简繁双语对照词典文件夹（各 6 个分模块 JSON 文件）。
+- **`scripts/`**：工程与自动化工具集，包含简繁词典对齐与禁用词校验器 (`compare_dicts.js`)、版本升级全量界面/悬浮/模板文案自动 Diff 扫描器 (`dev_tool.js scan-ui`) 及 MCP 基准清册 (`dev_tool.js dump-mcp`)。
+- **`tests/`**：基于 Node 原生 test runner 与 `jsdom` 的自动化回归测试套件。
 
 ---
 
@@ -52,7 +50,7 @@
 * **方法 B：通过 Git 命令行克隆（开发者推荐 💻）**
   如果您本地安装了 Git，可以直接在终端运行克隆命令：
   ```bash
-  # 如果您在国内，推荐使用下方代理加速克隆地址：
+  # 如果您在国内且镜像可用，可通过代理加速克隆（如镜像失效请更换其他可用代理）：
   git clone https://mirror.ghproxy.com/https://github.com/qqxpee/antigravity2-cn.git
   
   # 如果您配置了全局代理，可直接使用官方地址：
@@ -98,16 +96,38 @@ node localization_engine.js --brand-title translated
 
 ---
 
+## 🔌 可选高级功能：网络透明代理自动注入 (Windows 免 TUN 方案)
+
+如果您处于网络受限环境（例如连通 Google AI / Gemini 接口受阻），且不希望开启系统的全局虚拟网卡/TUN 模式，本项目支持在安装汉化时**自动联动注入 Windows 免 TUN 强制代理工具**。
+
+该方案基于优秀的开源项目 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)**（基于 MinHook 的 DLL 劫持透明代理）。
+
+### 使用方法：
+1. 前往 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)** 获取编译好的文件：
+   - `version.dll`
+   - `dbghelp.dll`
+   - `config.json`
+2. 在当前汉化项目根目录新建 `proxy_config` 文件夹（该文件夹已加入 `.gitignore` 本地排除，绝不会被 Git 提交污染）。
+3. 将 `version.dll`、`dbghelp.dll` 以及按您本地代理端口（如 `127.0.0.1:7890` / `18080`）配置好的 `config.json` 放入 `proxy_config/` 目录。
+4. 正常双击运行 **`双击安装中文汉化.bat`**：
+   - 汉化引擎将**自动检测** `proxy_config/` 目录。
+   - 一步自动完成 **“界面中文汉化 + 代理模块注入与同步更新”**，若有代理配置变动会自动覆盖更新，无需再在软件更新后每次手动拷贝 DLL 文件！
+5. **完全可选 & 零侵入**：
+   - 如果您不需要代理或未创建 `proxy_config/` 目录，安装流程保持 100% 官方纯净汉化，对普通用户零干扰。
+   - 运行 **`双击卸载还原官方英文.bat`** 时还原官方汉化，并保留已注入的代理文件（避免误删外部代理或影响英文环境下的网络连接；如需移除代理可手动删除对应文件）。
+
+---
+
 ## 🛠️ 汉化原理说明
 
-本引擎采用 **ASAR 包注入模式**，专为 **Antigravity 2.0+** 的 Electron 架构量身定制：
-1. **自动释放锁**：脚本运行前会自动探测并安全关闭 Antigravity 进程，防止文件占用锁定。
-2. **安全备份**：首次运行时，会在软件目录自动创建原始 `app.asar.bak` 文件，确保随时可无损还原。
+本引擎采用 **零依赖原生 ASAR 校验重包模式**，专为 **Antigravity 2.0+** 的 Electron 架构量身定制：
+1. **自动释放锁与多级缓存清理**：脚本运行前会自动探测并安全关闭 Antigravity 进程；注入完成后自动递归清理 `Antigravity` / `Antigravity IDE` 顶层及 `Partitions/hub-browser-*` 等分区下的 `Cache`、`Code Cache`、`GPUCache` 字节码缓存。
+2. **安全备份与事务保护**：首次运行时在软件目录创建原始 `app.asar.bak` 备份；构建候选包并逐文件通过 `node --check` 与完整性校验后才原子替换，支持随时无损还原。
 3. **精准注入**：
-   - 注入 `preload.js`：采用 WeakSet 记录与 Shadow DOM 穿透，启动高效的 `MutationObserver` 引擎，动态监测并将渲染层文本翻译为中文。
-   - 注入 `menu.js`：深度补丁系统级标题栏菜单。
-   - 注入 `tray.js`：汉化托盘与右键通知状态菜单。
-   - 注入 `loadingOverlay.js`：注入极具极客风格的趣味加载语：“反重力引擎已启动，正在摆脱地心引力...”。
+   - `preload.js`：采用 `WeakMap` / `WeakSet` 与 Shadow DOM 穿透，启动微任务合批的 `MutationObserver` 引擎，在严格隔离代码编辑器、终端与消息正文的前提下动态汉化 UI，并拦截原生右键菜单 IPC。
+   - `utils.js`：在主窗口加载并校验目标来源后，向 Sidecar 伴生面板子框架（`http(s)://` 与 `plugin://`）注入动态汉化运行时。
+   - `menu.js` / `tray.js` / `updater.js` / `loadingOverlay.js`：汉化系统级标题栏菜单、托盘菜单、更新检查弹窗以及启动加载页（`正在加载 Antigravity…`）。
+   - 主进程原生弹窗与内置页（`main.js`、`ipcHandlers.js`、`remoteManager.js`、`sshPrompts.js`、`deviceChooser.js`、`webauthn.js`、`webviewPopupSecurity.js`、`provisionSplash.js`）：覆盖退出确认框、macOS Dock 菜单、WSL 初始化与报错、SSH 安全密钥提示、设备/Passkey 选择与弹窗连接安全信息。
 
 ---
 
@@ -124,7 +144,7 @@ node localization_engine.js --brand-title translated
 > 2. **免开项目做法（提示词中需指定汉化目录）**：
 >    如果您当前正在开发别的项目，没有把汉化目录作为项目打开，那么您在对 AI 发起汉化命令时，**必须在提示词里明确告诉 AI 您的汉化包所在路径**，否则 AI 无法得知要修改您电脑上的哪个文件夹。
 >    * **提示词示例**：
->      > **“我的汉化包目录在 `C:\Users\您的电脑用户名\Downloads\antigravity_chinese`（请替换为您本地的实际路径），请帮我把下面这张截图里漏译的内容补全到词典里。”**
+>      > **“我的汉化包目录在 `C:\Users\您的电脑用户名\Downloads\antigravity2-cn`（请替换为您本地的实际路径），请帮我把下面这张截图里漏译的内容补全到词典里。”**
 
 ### 📋 常用提示词（Prompt）模板
 
@@ -148,12 +168,42 @@ node localization_engine.js --brand-title translated
 
 ---
 
+## 🧩 版本升级差异扫描与 MCP 清单自动对齐 (欢迎社区共建)
+
+Antigravity 2.x 的前端 SPA 与“**添加 MCP 服务器 (Add MCP Server)**”市场目录均由客户端内置 `language_server` 与云端 RPC 动态提供。版本升级时无需手动逐页截图，项目已内置直连客户端的自动化扫描工具 [`scripts/dev_tool.js`](scripts/dev_tool.js)：
+
+### 📌 极简同步流程（AI 助手 / 开发者适用 💻）
+1. 先启动并打开最新版 Antigravity 客户端（确保后台 `language_server` 进程正在运行）。
+2. 在项目根目录执行以下命令扫描版本升级差异：
+   ```bash
+   # 1. 扫描全量界面、悬浮提示与模板字面量文案差异（结果输出至 scratch/untranslated_ui_diff.json）
+   node scripts/dev_tool.js scan-ui
+
+   # 2. 拉取最新官方 MCP 目录并与基准清册对比（发现变更时输出至 scratch/mcp_catalog_diff.json）
+   node scripts/dev_tool.js dump-mcp
+   ```
+3. 将生成的 `scratch/` 增量文件交给 AI 助手，按规范补充翻译至 `dicts/` 与 `dicts_tw/`（或调整 `src/preload_runtime.js` 动态规则）。
+4. 运行校验并更新基准：
+   ```bash
+   node scripts/compare_dicts.js
+   node scripts/dev_tool.js scan-ui --update-baseline
+   node scripts/dev_tool.js dump-mcp --update-baseline
+   ```
+5. 清理 `scratch/` 后重新运行安装脚本即可立即生效；欢迎提交 Pull Request 共同维护！
+
+> 💡 **提示**：更多诊断命令（如 `port`、`search`、`slice`）可直接查看 [`scripts/dev_tool.js`](scripts/dev_tool.js) 顶部的注释说明。
+
+---
+
 ## 📝 词典自定义指南 (供极客手动使用)
 
-如果您想手动修改翻译，可以直接打开 `dicts/` 目录下的 JSON 文件：
+如果您想手动修改翻译，可以直接打开 `dicts/`（简体）或 `dicts_tw/`（繁体）目录下的 6 个 JSON 文件：
 - **`common.json`**：公共基础词汇、侧边栏概览、登录页、常用按钮等。
-- **`page_settings.json`**：包含极其丰富的详细设置面板、权限二级菜单对照。
 - **`menu_nav.json`**：系统及菜单栏翻译。
+- **`page_main.json`**：主对话区、编辑器、工作区及核心交互文案。
+- **`page_agents.json`**：智能体 / 子代理 / Swarm 协作相关文案。
+- **`page_settings.json`**：详细设置面板与权限二级菜单对照。
+- **`page_mcp_knowledge.json`**：官方 MCP 服务器及知识库说明翻译。
 
 在 JSON 中新增一行，格式如下即可（注意英文逗号）：
 ```json
@@ -174,10 +224,44 @@ node localization_engine.js --brand-title translated
   - **Windows**：请右键点击 `双击安装中文汉化.bat`，选择 **“以管理员身份运行”**。
   - **macOS**：若双击运行 `.command` 提示无法打开或没有执行权限，可在终端中执行 `chmod +x *.command` 来授权。如果是系统安全拦截，请在“系统设置 -> 隐私与安全性”中点击“仍要打开”。本汉化包已内置自动重签名机制，修改后会重新进行 Ad-hoc 签名以防止 macOS 提示应用损坏。
 
-### 3）软件官方更新后，汉化失效了怎么办？
-* 软件升级时，官方会覆盖 `app.asar` 文件。您无需担心，直接完全退出软件，重新双击运行 **`双击安装中文汉化.bat`** 重新注入一次即可完美恢复中文。
+### 3）软件官方更新后，汉化失效了怎么办？（含 Windows 自检启动器）
+* **原因**：Antigravity 内置 `electron-updater`（`autoDownload = true`、`autoInstallOnAppQuit = true`），后台下载的更新包会在您退出软件时静默安装并覆盖 `resources/app.asar`，因此下次打开会变回英文。
+* **手动恢复**：完全退出软件，重新双击运行 **`双击安装中文汉化.bat`**（macOS 用户运行 **`双击安装中文汉化.command`**）即可恢复中文。
+* **Windows 自动自检启动**：可双击或创建桌面快捷方式指向 **`启动Antigravity(自动检查汉化).bat`**（底层调用 `node scripts/ensure_localized.js --fix --launch`）。它会在启动前检查 `app.asar` 是否含汉化标记；若已被官方自动更新覆盖且目标客户端未在运行，会自动沿用上次的 `--tw` / `--brand-title` 偏好以 `--no-kill` 重新注入后再拉起客户端（若修复失败会中止启动并报错，不会直接启动英文版；如需显式切换繁体或简体，可在参数中附加 `--tw` 或 `--sc`）。
+
+### 4）在简体中文 Windows 上运行繁体版脚本提示乱码怎么办？
+* 为兼容繁体中文 Windows（代码页 `CP950`），`双击安装繁体中文.bat` 按 Big5 编码保存；在简体中文 Windows（默认 `CP936`）直接双击时终端提示会显示乱码。可在 CMD 中先切换代码页再运行：`chcp 950 && 双击安装繁体中文.bat`，或直接执行 `node localization_engine.js --tw --brand-title english`。
+
+---
+
+## 回归测试
+
+测试依赖固定为 jsdom `30.1.3`，需 Node.js `^22.22.2 || ^24.15.0 || >=26.0.0`；建议使用 Node.js 24.15.0 或更新的 24.x 版本。在项目目录运行：
+
+```sh
+npm ci
+npm test
+node --check localization_engine.js
+node --check src/preload_runtime.js
+node --check src/main_patches.js
+node --check src/asar_patcher.js
+node --check scripts/ensure_localized.js
+node --check scripts/compare_dicts.js
+node --check scripts/dev_tool.js
+node scripts/compare_dicts.js
+```
+
+测试从当前源码生成翻译脚本，在 jsdom 和临时文件夹中验证内容隔离、表单值、Shadow DOM、Swarm/Sidecar 网关、主进程弹窗 ASAR 校验、多级缓存清理及模板动态规则行为，不启动或修改本机 Antigravity。GitHub Actions 会在 Windows 和 Linux 上执行这些检查。
+
+---
+
+## 📈 Star 增长趋势与社区生态 (Star History)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=qqxpee/antigravity2-cn&type=Date)](https://star-history.com/#qqxpee/antigravity2-cn&Date)
 
 ---
 
 ## 🤝 致谢
-感谢所有参与测试与反馈的贡献者！
+- 感谢所有参与测试与反馈的贡献者！
+- 特别鸣谢 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)** 提供优秀的 Windows 免 TUN 强制代理注入方案。
+- 特别鸣谢 **[yiheng8023/antigravity-chinese](https://github.com/yiheng8023/antigravity-chinese)** 开放的词典成果（MIT 协议），为本次 v2.26.0+ 新增特性词条整合提供了重要基础。
