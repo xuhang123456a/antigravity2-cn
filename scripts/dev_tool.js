@@ -64,7 +64,28 @@ function getLanguageServerCandidates() {
                         if (Number.isInteger(portNum) && portNum > 0 && !ports.includes(portNum)) ports.push(portNum);
                     }
                 } catch (portErr) {
-                    console.warn(`[!] 查询进程 ${pid} 监听端口失败: ${portErr.message}`);
+                    let fallbackOk = false;
+                    if (process.platform === 'linux') {
+                        try {
+                            const ssOut = child_process.execSync('ss -H -ltnp', { encoding: 'utf-8', stdio: 'pipe', timeout: 5000 });
+                            const pidToken = `pid=${pid},`;
+                            const pidTokenEnd = `pid=${pid})`;
+                            for (const ssLine of ssOut.split(/\r?\n/)) {
+                                if (!ssLine.includes(pidToken) && !ssLine.includes(pidTokenEnd)) continue;
+                                const cols = ssLine.trim().split(/\s+/);
+                                const localAddr = cols[3] || '';
+                                const portMatch = localAddr.match(/:(\d+)$/);
+                                if (portMatch) {
+                                    const portNum = parseInt(portMatch[1], 10);
+                                    if (Number.isInteger(portNum) && portNum > 0 && !ports.includes(portNum)) ports.push(portNum);
+                                }
+                            }
+                            fallbackOk = true;
+                        } catch (_ssErr) {}
+                    }
+                    if (!fallbackOk) {
+                        console.warn(`[!] 查询进程 ${pid} 监听端口失败: ${portErr.message}`);
+                    }
                 }
                 candidates.push({ pid, csrfToken, ports, cmd });
             }
@@ -603,9 +624,39 @@ async function cmdScanUi(args = []) {
             console.warn(`[!] 拉取 Mendel 实验配置失败: ${e.message}`);
         }
 
-        // 同步通过 GetSlashCommands RPC 提取内置 `/` 斜杠命令与内置技能描述（位于 language_server 二进制内）
+        // 同步通过 GetUserStatus / RetrieveUserQuotaSummary / GetSlashCommands RPC 提取后端下发动态词条与内置 `/` 斜杠命令描述
+        let us = null;
+        const recordRpcString = (rawText, source) => {
+            const s = normalizeUiText(rawText || '');
+            if (isNaturalUiString(s)) {
+                if (!extracted.has(s)) extracted.set(s, new Set());
+                extracted.get(s).add(source);
+            }
+        };
         try {
-            const us = await postJsonRpc(`https://127.0.0.1:${httpsPort}/exa.language_server_pb.LanguageServerService/GetUserStatus`, info.csrfToken, {});
+            us = await postJsonRpc(`https://127.0.0.1:${httpsPort}/exa.language_server_pb.LanguageServerService/GetUserStatus`, info.csrfToken, {});
+            for (const cfg of (us?.userStatus?.cascadeModelConfigData?.clientModelConfigs || [])) {
+                recordRpcString(cfg?.tagDescription, 'rpc:userStatus');
+            }
+            recordRpcString(us?.userStatus?.userTier?.upgradeSubscriptionText, 'rpc:userStatus');
+        } catch (e) {
+            console.warn(`[!] 拉取用户状态动态词条失败: ${e.message}`);
+        }
+
+        try {
+            const quota = await postJsonRpc(`https://127.0.0.1:${httpsPort}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary`, info.csrfToken, {});
+            for (const grp of (quota?.response?.groups || quota?.groups || [])) {
+                recordRpcString(grp?.description, 'rpc:quotaSummary');
+                for (const bkt of (grp?.buckets || [])) {
+                    recordRpcString(bkt?.displayName, 'rpc:quotaSummary');
+                    recordRpcString(bkt?.description, 'rpc:quotaSummary');
+                }
+            }
+        } catch (e) {
+            console.warn(`[!] 拉取配额摘要动态词条失败: ${e.message}`);
+        }
+
+        try {
             const defaultModel = us?.userStatus?.cascadeModelConfigData?.defaultOverrideModelConfig?.modelOrAlias;
             const scData = await postJsonRpc(`https://127.0.0.1:${httpsPort}/exa.language_server_pb.LanguageServerService/GetSlashCommands`, info.csrfToken, {
                 cascadeConfig: {
@@ -618,11 +669,7 @@ async function cmdScanUi(args = []) {
             for (const cmd of (scData?.commands || [])) {
                 const defPath = cmd.info?.definitionPath || '';
                 if (defPath && !/[\\/]\.gemini[\\/]antigravity[\\/]builtin[\\/]/i.test(defPath)) continue;
-                const s = normalizeUiText(cmd.description || '');
-                if (isNaturalUiString(s)) {
-                    if (!extracted.has(s)) extracted.set(s, new Set());
-                    extracted.get(s).add('rpc:slashCommand');
-                }
+                recordRpcString(cmd.description, 'rpc:slashCommand');
             }
         } catch (e) {
             console.warn(`[!] 拉取内置斜杠命令描述失败: ${e.message}`);

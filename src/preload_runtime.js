@@ -7,7 +7,7 @@
     const USE_TW = __USE_TW_PLACEHOLDER__;
     const map = new Map(Object.entries(DICT_PLACEHOLDER));
     const lowerMap = new Map();
-    const LOWER_WORDS_EXCLUDE = new Set(['on', 'in', 'to', 'at', 'by', 'for', 'with', 'as', 'system', 'review', 'active', 'browser', 'global', 'including', 'and', 'or', 'file', 'files', 'help', 'app', 'plan', 'search', 'coordinator']);
+    const LOWER_WORDS_EXCLUDE = new Set(['on', 'in', 'to', 'at', 'by', 'for', 'with', 'as', 'system', 'review', 'active', 'browser', 'global', 'including', 'and', 'or', 'file', 'files', 'help', 'app', 'plan', 'search', 'coordinator', 'verify', 'applied', 'chosen', 'failed', 'move', 'never', 'resolve', 'self', 'context usage', 'navigation', 'suggestions', 'recommended', 'days', 'arguments', 'output', 'result', 'response', 'input', 'parameters', 'folder', 'drive', 'steps', 'step', 'automation']);
     for (const [k, v] of map.entries()) {
         const lowerK = k.toLowerCase();
         if (LOWER_WORDS_EXCLUDE.has(lowerK) && k !== lowerK) {
@@ -30,8 +30,29 @@
     const SKIP_TAGS = ['SCRIPT', 'STYLE', 'PRE', 'CODE'];
 
     // 代码、富文本输入框及对话内容隔离选择器：排除 Lexical 输入框、用户消息、AI 响应正文、思考内容、代码块、终端及文件路径
-    const CODE_ISOLATION_SELECTOR = 'script, style, pre, code, .monaco-editor, .cm-editor, .cm-line, [contenteditable="true"], [contenteditable="plaintext-only"], [contenteditable=""], [data-lexical-editor], .terminal, .xterm, .code-line, .code-block, .line-content, [aria-label="File Viewer"], [aria-label="文件查看器"], [aria-label="檔案檢視器"], [data-file-uri], [data-uri], [class*="diffEditor"], .token, .hljs, [class*="mtk"], .font-mono, [data-quotable-inline="true"], .context-scope-mention, [data-testid="file-title-name"], [data-testid="entity-pill"], [data-project-card="true"], [data-testid="conversation-row-sidebar"] span.truncate, [translate="no"], .notranslate, .md-divider-spacing, .cursor-edit, [data-testid="user-input-step"] [data-quotable="true"], [data-testid="user-input-step"] .whitespace-pre-wrap, [data-testid="planner-response-text"], [data-testid="thinking-collapsible-trigger"] + div, [data-testid="thinking-collapsible-trigger"] ~ div, .msg-body, .sys-text, .node-label, .raw-meta .path, .o2-mauth, .o2-wchip.bee > span:last-child, .o2-m[data-o2who]:not(.all) > span:last-child';
+    const CODE_ISOLATION_SELECTOR = 'script, style, pre, code, .monaco-editor, .cm-editor, .cm-line, [contenteditable="true"], [contenteditable="plaintext-only"], [contenteditable=""], [data-lexical-editor], .terminal, .xterm, .code-line, .code-block, .line-content, [aria-label="File Viewer"], [aria-label="文件查看器"], [aria-label="檔案檢視器"], [data-file-uri], [data-uri], [class*="diffEditor"], .token, .hljs, [class*="mtk"], .font-mono, [data-quotable-inline="true"], .context-scope-mention, [data-testid="file-title-name"], [data-testid="entity-pill"], [data-project-card="true"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] span.truncate, [translate="no"], .notranslate, .md-divider-spacing, .cursor-edit, [data-testid="user-input-step"] [data-quotable="true"], [data-testid="user-input-step"] .whitespace-pre-wrap, [data-testid="planner-response-text"], [data-testid="thinking-collapsible-trigger"] + div, [data-testid="thinking-collapsible-trigger"] ~ div, .msg-body, .sys-text, .node-label, .raw-meta .path, .o2-mauth, .hv-nm, .o2-wchip.bee > span:last-child, .o2-m[data-o2who]:not(.all) > span:last-child';
+    const HARD_CODE_ISOLATION_SELECTOR = 'script, style, pre, code, .monaco-editor, .cm-editor, .cm-line, [contenteditable="true"], [contenteditable="plaintext-only"], [contenteditable=""], [data-lexical-editor], .terminal, .xterm, .code-line, .line-content, [aria-label="File Viewer"], [aria-label="文件查看器"], [aria-label="檔案檢視器"], [data-file-uri], [data-uri], [class*="diffEditor"], .token, .hljs, [class*="mtk"], [data-quotable-inline="true"], .context-scope-mention, [data-testid="file-title-name"], [data-testid="entity-pill"], [data-project-card="true"], [data-testid="conversation-row-sidebar"] span.truncate, [data-testid="conversation-row-history"] span.truncate, .cursor-edit, [data-testid="user-input-step"] [data-quotable="true"], [data-testid="user-input-step"] .whitespace-pre-wrap, [data-testid="planner-response-text"], .msg-body, .sys-text, .node-label, .raw-meta .path, .o2-mauth, .hv-nm, .o2-wchip.bee > span:last-child, .o2-m[data-o2who]:not(.all) > span:last-child';
+    const RAW_CODE_ISOLATION_SELECTOR = 'script, style, pre, code, .monaco-editor, .cm-editor, .cm-line, [contenteditable="true"], [contenteditable="plaintext-only"], [contenteditable=""], [data-lexical-editor], .terminal, .xterm, .code-line, .line-content, [aria-label="File Viewer"], [aria-label="文件查看器"], [aria-label="檔案檢視器"], [class*="diffEditor"], .token, .hljs, [class*="mtk"], [data-testid="planner-response-text"], [data-testid="user-input-step"], [data-testid="conversation-row-sidebar"], [data-testid="conversation-row-history"], .msg-body, .sys-text, .node-label';
+    const TOOL_CODE_BOX_SELECTOR = 'pre, code, .code-block, .hljs, .code-line, .line-content, .cm-editor, .monaco-editor, .font-mono, .terminal, .xterm, [class*="language-"], [class*="mtk"]';
 
+    // 字体图标容器：文本内容是图标名称，不是界面文字
+    const ICON_FONT_SELECTOR = '.google-symbols, .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons';
+    // Antigravity 2.35.1 内置 SVG 表缺少、会退回字体渲染的图标（由 main.js 图标组件与 icon 属性比对得出）
+    const ICON_FONT_FALLBACK_PATHS = {
+        restore_page: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'],
+        comment: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
+        format_quote: ['M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z', 'M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'],
+        laptop_shield: ['M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16', 'M12 8l3 1.2v1.8c0 1.6-1.3 2.7-3 3.2-1.7-.5-3-1.6-3-3.2V9.2z']
+    };
+    // 权限预设胶囊按钮短标签 [简体, 繁体]
+    const PERMISSION_PILL_LABELS = {
+        'Request Review': ['请求审查', '請求審查'],
+        'Default': ['默认', '預設'],
+        'Auto': ['自动', '自動'],
+        'Turbo': ['极速', '極速'],
+        // 「Full machine」的短标签；词典里的 Machine 指云端运行环境，不适用于此
+        'Machine': ['整机', '全機']
+    };
     function isCodeOrEditor(node, forAttribute) {
         try {
             if (!node) return false;
@@ -94,6 +115,31 @@
     // ==========================================
     // 原生系统右键菜单 (Native Context Menu) 汉化拦截
     // ==========================================
+    const CONTEXT_MENU_EXTRA_MAP = {
+        remove: ['移除', '移除'],
+        replace: ['替换', '取代'],
+        hide: ['隐藏', '隱藏'],
+        show: ['显示', '顯示'],
+        create: ['创建', '建立'],
+        apply: ['应用', '套用'],
+        reply: ['回复', '回覆'],
+        duplicate: ['创建副本', '建立副本'],
+        inspect: ['检查', '檢查'],
+        'inspect element': ['检查元素', '檢查元素'],
+        find: ['查找', '尋找'],
+        cut: ['剪切', '剪下'],
+        paste: ['粘贴', '貼上'],
+        'paste and match style': ['粘贴并匹配样式', '貼上並符合樣式'],
+        'select all': ['全选', '全選'],
+        open: ['打开', '開啟'],
+        'open in terminal': ['在终端中打开', '在終端機中開啟'],
+        'copy relative path': ['复制相对路径', '複製相對路徑'],
+        'move to trash': ['移至废纸篓', '移至垃圾桶'],
+        'close others': ['关闭其他标签页', '關閉其他分頁'],
+        'close all': ['关闭全部', '全部關閉'],
+        'close to the right': ['关闭右侧标签页', '關閉右側分頁']
+    };
+
     function translateContextMenuLabel(label) {
         if (!label || typeof label !== 'string') return label;
         let trimmed = norm(label);
@@ -107,12 +153,17 @@
 
         let translated = null;
         const shortcutTrans = translateWithShortcut(trimmed);
+        const lowTrimmed = trimmed.toLowerCase();
         if (shortcutTrans) {
             translated = shortcutTrans;
         } else if (map.has(trimmed)) {
             translated = map.get(trimmed);
-        } else if (lowerMap.has(trimmed.toLowerCase())) {
-            translated = lowerMap.get(trimmed.toLowerCase());
+        } else if (lowerMap.has(lowTrimmed)) {
+            translated = lowerMap.get(lowTrimmed);
+        } else if (Object.prototype.hasOwnProperty.call(CONTEXT_MENU_EXTRA_MAP, lowTrimmed)) {
+            translated = CONTEXT_MENU_EXTRA_MAP[lowTrimmed][USE_TW ? 1 : 0];
+        } else {
+            translated = translateExactOrDynamic(trimmed);
         }
 
         if (translated) {
@@ -218,21 +269,53 @@
         return parts.length && !text.slice(end).trim() ? parts.join(' ') : null;
     }
 
-    function translateUsageText(value) {
-        const limit = value.match(/^([0-9]+)(?:h|[- ]hours?)\s+limit$/i);
-        if (limit) return limit[1] + (USE_TW ? ' 小時上限' : ' 小时限额');
-        const remaining = value.match(/^([0-9]+(?:\.[0-9]+)?\s*%|%)\s+left$/i);
-        if (remaining) return remaining[1] + (USE_TW ? ' 剩餘' : ' 剩余');
-        const reset = value.match(/^(?:Resets|Refreshes)\s+in\s+(.+)$/i);
-        if (reset) {
-            const duration = formatUsageDuration(reset[1]);
-            if (duration) return duration + (USE_TW ? ' 後重設' : ' 后重置');
+    function translateLimitLabel(raw) {
+        const s = raw.trim();
+        if (/^daily\s+limit$/i.test(s)) return USE_TW ? '每日上限' : '每日限额';
+        if (/^weekly\s+limit$/i.test(s)) return USE_TW ? '每週上限' : '每周限额';
+        if (/^monthly\s+limit$/i.test(s)) return USE_TW ? '每月上限' : '每月限额';
+        const m = s.match(/^([0-9]+)(?:[- ]*(s|sec|seconds?|m|min|minutes?|h|hr|hours?|d|days?|w|wk|weeks?))\s+limit$/i);
+        if (m) {
+            const unit = m[2].toLowerCase();
+            const unitName = /^(?:w|wk|weeks?)$/.test(unit) ? (USE_TW ? '週' : '周')
+                : /^(?:d|days?)$/.test(unit) ? '天'
+                : /^(?:h|hr|hours?)$/.test(unit) ? (USE_TW ? '小時' : '小时')
+                : /^(?:m|min|minutes?)$/.test(unit) ? (USE_TW ? '分鐘' : '分钟') : '秒';
+            return m[1] + ' ' + unitName + (USE_TW ? '上限' : '限额');
         }
         return null;
     }
 
+    function translateResetPart(raw) {
+        const reset = raw.trim().match(/^(?:Resets|Refreshes)\s+in\s+(.+)$/i);
+        if (!reset) return null;
+        const duration = formatUsageDuration(reset[1]);
+        return duration ? (duration + (USE_TW ? ' 後重設' : ' 后重置')) : null;
+    }
+
+    function translateUsageText(value) {
+        const combo = value.match(/^(.+?),\s*((?:resets|refreshes)\s+in\s+.+)$/i);
+        if (combo) {
+            const limitPart = translateLimitLabel(combo[1]) || map.get(combo[1].trim()) || lowerMap.get(combo[1].trim().toLowerCase());
+            const resetPart = translateResetPart(combo[2]);
+            if (limitPart && resetPart) return limitPart + '，' + resetPart;
+        }
+        const limitLabel = translateLimitLabel(value);
+        if (limitLabel) return limitLabel;
+        const remaining = value.match(/^([0-9]+(?:\.[0-9]+)?\s*%|%)\s+left$/i);
+        if (remaining) return remaining[1] + (USE_TW ? ' 剩餘' : ' 剩余');
+        const reset = translateResetPart(value);
+        if (reset) return reset;
+        return null;
+    }
+
     function isModelMenuText(node) {
-        const menu = node.parentElement && node.parentElement.closest('[role="menu"]');
+        const el = node.parentElement;
+        if (!el || typeof el.closest !== 'function') return false;
+        if (el.closest('[data-testid="model-selector-panel"], [data-testid="model-selector-item"], [data-testid="model-selector-custom-item"], [data-testid="model-selector-orchestrator"]')) {
+            return true;
+        }
+        const menu = el.closest('[role="menu"]');
         if (!menu) return false;
         let label = menu.getAttribute('aria-label');
         if (!label) {
@@ -318,10 +401,189 @@
         'blocked': ['受阻', '受阻'],
         'done': ['已完成', '已完成'],
         'active': ['活跃', '執行中'],
-        'paused': ['已暂停', '已暫停']
+        'paused': ['已暂停', '已暫停'],
+        'Hive': ['蜂巢', '蜂巢'],
+        'Tasks done': ['任务已完成', '任務已完成'],
+        'Message just sent': ['刚发送消息', '剛傳送訊息'],
+        'Waiting on': ['等待中', '正在等待'],
+        'Stuck': ['已卡住', '受阻'],
+        'Resting': ['休息中', '休息中'],
+        'Latest action': ['最新动作', '最新動作'],
+        'Zoom': ['缩放', '縮放']
     };
 
-    const SWARM_UI_SELECTOR = '[data-testid^="swarm-"], .o2, .player, .graph-legend, .raw-toolbar, #tab-overview, #tab-body-feed, #tab-body-graph, #tab-body-raw, #swarm-title, #replay-label';
+    const SWARM_UI_SELECTOR = '[data-testid^="swarm-"], .o2, .player, .graph-legend, .raw-toolbar, #tab-overview, #tab-hive, #tab-body-feed, #tab-body-graph, #tab-body-raw, #swarm-title, #replay-label';
+    const BUILTIN_SIDECAR_SELECTOR = '[data-testid^="swarm-"], .o2, .graph-legend, .raw-toolbar, #tab-overview, #tab-hive, #tab-body-feed, #tab-body-graph, #tab-body-raw, #swarm-title, #replay-label, #ov-notice, #ov-ack';
+    let subframeActivated = false;
+
+    function isSubframeWindow() {
+        try {
+            return typeof window !== 'undefined' && Boolean(window.top) && window !== window.top;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    function isBuiltInSidecarDocument() {
+        try {
+            if (typeof location !== 'undefined' && location && /^plugin:$/i.test(location.protocol || '') && /^swarm(?:-|$)/i.test(location.hostname || '')) {
+                return true;
+            }
+        } catch (e) {}
+        if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return false;
+        if (document.querySelector(BUILTIN_SIDECAR_SELECTOR)) return true;
+        const emptyBody = document.querySelector('#empty-body');
+        if (emptyBody && /swarm/i.test(emptyBody.textContent || '')) return true;
+        return false;
+    }
+
+    const TOOL_CALL_SECTION_LABELS = {
+        'arguments': ['参数', '參數'],
+        'output': ['输出', '輸出'],
+        'result': ['结果', '結果'],
+        'response': ['响应', '回應'],
+        'input': ['输入', '輸入'],
+        'parameters': ['参数', '參數'],
+        'tool arguments': ['工具参数', '工具參數'],
+        'tool output': ['工具输出', '工具輸出'],
+        'tool result': ['工具结果', '工具結果'],
+        'return value': ['返回值', '傳回值'],
+        'tool response': ['工具响应', '工具回應'],
+        'command output': ['命令输出', '指令輸出']
+    };
+
+    function lookupToolCallSectionLabel(valNorm) {
+        if (!valNorm) return null;
+        const hasColon = valNorm.endsWith(':');
+        const base = (hasColon ? valNorm.slice(0, -1) : valNorm).trim().toLowerCase();
+        if (!Object.prototype.hasOwnProperty.call(TOOL_CALL_SECTION_LABELS, base)) return null;
+        const pair = TOOL_CALL_SECTION_LABELS[base];
+        return pair[USE_TW ? 1 : 0] + (hasColon ? '：' : '');
+    }
+
+    function translateTruncatedNotice(valNorm) {
+        if (!valNorm) return null;
+        const mMore = valNorm.match(/^(\.\.\.\s*)?([\d,]+)\s+more\s+(lines?|characters?|chars?|bytes?|items?),\s*truncated for display\.?$/i);
+        if (mMore) {
+            const uLow = mMore[3].toLowerCase();
+            const uZh = uLow.startsWith('line') ? '行'
+                : (uLow.startsWith('char') ? (USE_TW ? '個字元' : '个字符')
+                : (uLow.startsWith('byte') ? (USE_TW ? '個位元組' : '个字节')
+                : (USE_TW ? '項' : '项')));
+            return (mMore[1] ? '... ' : '') + (USE_TW ? ('還有 ' + mMore[2] + ' ' + uZh + '，已截斷顯示。') : ('还有 ' + mMore[2] + ' ' + uZh + '，已截断显示。'));
+        }
+        const mBare = valNorm.match(/^(\.\.\.\s*)?truncated for display\.?$/i);
+        if (mBare) {
+            return (mBare[1] ? '... ' : '') + (USE_TW ? '已截斷顯示。' : '已截断显示。');
+        }
+        return null;
+    }
+
+    function isInsideActualThinkingBody(el) {
+        if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+        let cur = el;
+        while (cur && typeof document !== 'undefined' && cur !== document.body && cur !== document.documentElement) {
+            const prev = cur.previousElementSibling;
+            if (cur.tagName === 'DIV' && prev && typeof prev.matches === 'function' && prev.matches('[data-testid="thinking-collapsible-trigger"]')) {
+                const trigText = norm(prev.textContent || '');
+                if (/^(?:Thought|Thinking|已思考|正在思考)\b/i.test(trigText)) {
+                    return true;
+                }
+            }
+            cur = cur.parentElement;
+        }
+        return false;
+    }
+
+    function isCodeBoxNode(el) {
+        if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+        return (typeof el.matches === 'function' && el.matches(TOOL_CODE_BOX_SELECTOR)) ||
+            (typeof el.querySelector === 'function' && Boolean(el.querySelector(TOOL_CODE_BOX_SELECTOR)));
+    }
+
+    function hasAdjacentCodeBlock(el) {
+        if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+        if ((typeof el.closest === 'function' && el.closest(HARD_CODE_ISOLATION_SELECTOR)) || isInsideActualThinkingBody(el)) return false;
+        let cur = el;
+        for (let d = 0; cur && d < 3 && typeof document !== 'undefined' && cur !== document.body && cur !== document.documentElement; d++, cur = cur.parentElement) {
+            if (d > 0) {
+                const chCount = cur.children ? cur.children.length : Array.from(cur.childNodes || []).filter(c => c.nodeType === Node.ELEMENT_NODE).length;
+                if (isCodeBoxNode(cur) || norm(cur.textContent || '').length > 48 || chCount > 4) break;
+            }
+            if (isCodeBoxNode(cur.nextElementSibling)) return true;
+        }
+        const parent = el.parentElement;
+        if (parent && typeof document !== 'undefined' && parent !== document.body && parent !== document.documentElement) {
+            if ((typeof parent.closest === 'function' && parent.closest(HARD_CODE_ISOLATION_SELECTOR)) || isInsideActualThinkingBody(parent)) return false;
+            const siblings = parent.children || Array.from(parent.childNodes || []).filter(c => c.nodeType === Node.ELEMENT_NODE);
+            if (siblings.length <= 6) {
+                for (const sib of siblings) {
+                    if (sib !== el && typeof sib.matches === 'function' && sib.matches('pre, code, .code-block, .hljs, .cm-editor, .monaco-editor')) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function replaceElementTextNodes(el, newText) {
+        if (!el || !newText) return false;
+        const tNodes = Array.from(el.childNodes || []).filter(c => c.nodeType === Node.TEXT_NODE);
+        if (tNodes.length === 0) return false;
+        const elChildrenCount = el.children ? el.children.length : Array.from(el.childNodes || []).filter(c => c.nodeType === Node.ELEMENT_NODE).length;
+        if (tNodes.length === 1) {
+            if (norm(tNodes[0].nodeValue) !== norm(el.textContent || '')) return false;
+            if (tNodes[0].nodeValue !== newText) {
+                tNodes[0].nodeValue = newText;
+                translatedValues.set(tNodes[0], newText);
+            }
+            return true;
+        }
+        if (elChildrenCount === 0) {
+            for (let i = 0; i < tNodes.length; i++) {
+                const targetVal = i === 0 ? newText : '';
+                if (tNodes[i].nodeValue !== targetVal) {
+                    tNodes[i].nodeValue = targetVal;
+                }
+                translatedValues.set(tNodes[i], targetVal);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function translateIsolatedToolCallChrome(container) {
+        if (!container || container.nodeType !== Node.ELEMENT_NODE || container.isContentEditable) return;
+        if (typeof container.closest === 'function' && container.closest(RAW_CODE_ISOLATION_SELECTOR)) return;
+        if (isInsideActualThinkingBody(container)) return;
+
+        const candidates = [container];
+        if (typeof container.querySelectorAll === 'function') {
+            for (const sub of container.querySelectorAll('div, span, p, em, i, strong, b, h1, h2, h3, h4, h5, h6, label, summary, button, dt, dd')) {
+                candidates.push(sub);
+            }
+        }
+        const strictCodeSel = 'pre, code, .code-block, .hljs, .code-line, .line-content, .cm-editor, .monaco-editor, .terminal, .xterm';
+        for (const el of candidates) {
+            if (!el || el.isContentEditable) continue;
+            if (typeof el.closest === 'function' && el.closest(RAW_CODE_ISOLATION_SELECTOR)) continue;
+            if (isInsideActualThinkingBody(el)) continue;
+            if (typeof el.querySelector === 'function' && el.querySelector(strictCodeSel)) continue;
+            const fullNorm = norm(el.textContent || '');
+            if (!fullNorm) continue;
+            const truncZh = translateTruncatedNotice(fullNorm);
+            if (truncZh) {
+                replaceElementTextNodes(el, truncZh);
+                continue;
+            }
+            if (typeof el.closest === 'function' && el.closest(HARD_CODE_ISOLATION_SELECTOR)) continue;
+            const secZh = lookupToolCallSectionLabel(fullNorm);
+            if (secZh && hasAdjacentCodeBlock(el)) {
+                replaceElementTextNodes(el, secZh);
+            }
+        }
+    }
 
     function isSwarmUiContext(el) {
         try {
@@ -364,9 +626,94 @@
         if (errMatch) {
             return (USE_TW ? '錯誤：' : '错误：') + errMatch[1];
         }
-        const openMemberMatch = trimmed.match(/^Open\s+([a-z0-9][a-z0-9._-]*)$/);
+        const openMemberMatch = trimmed.match(/^Open\s+(@?[a-z0-9][a-z0-9._-]*)$/);
         if (openMemberMatch) {
             return (USE_TW ? '開啟 ' : '打开 ') + openMemberMatch[1];
+        }
+        const workingForMatch = trimmed.match(/^Working for\s+(@\S+)$/i);
+        if (workingForMatch) {
+            return USE_TW ? ('為 ' + workingForMatch[1] + ' 執行中') : ('正在为 ' + workingForMatch[1] + ' 工作');
+        }
+        const waitingOnMemberMatch = trimmed.match(/^Waiting on\s+(@\S+)$/i);
+        if (waitingOnMemberMatch) {
+            return '正在等待 ' + waitingOnMemberMatch[1];
+        }
+        const waitingOnCountMatch = trimmed.match(/^Waiting on\s+(\d+)$/i);
+        if (waitingOnCountMatch) {
+            return USE_TW ? ('正在等待 ' + waitingOnCountMatch[1] + ' 位成員') : ('正在等待 ' + waitingOnCountMatch[1] + ' 位成员');
+        }
+        const waitersChipMatch = trimmed.match(/^(\d+)\s+waiting on\s+(@\S+)$/i);
+        if (waitersChipMatch) {
+            return waitersChipMatch[1] + ' 位正在等待 ' + waitersChipMatch[2];
+        }
+        const ofDoneMatch = trimmed.match(/^(\d+)\s+of\s+(\d+)\s+(?:tasks\s+)?done$/i);
+        if (ofDoneMatch) {
+            return '已完成 ' + ofDoneMatch[1] + ' / ' + ofDoneMatch[2] + (USE_TW ? ' 項' : ' 项');
+        }
+        const beeCountMatch = trimmed.match(/^(\d+)\s+bees?$/i);
+        if (beeCountMatch) {
+            return beeCountMatch[1] + (USE_TW ? ' 位成員' : ' 位成员');
+        }
+        const chipSummaryMatch = trimmed.match(/^(\d+)\s+(stuck|needs?\s+you|in\s+review|active|working|waiting|done|threads?\s+open)$/i);
+        if (chipSummaryMatch) {
+            const cnt = chipSummaryMatch[1];
+            const k = chipSummaryMatch[2].toLowerCase().replace(/\s+/g, ' ');
+            if (k === 'stuck') return cnt + (USE_TW ? ' 項受阻' : ' 项卡住');
+            if (k === 'needs you' || k === 'need you') return cnt + (USE_TW ? ' 項待您處理' : ' 项待您处理');
+            if (k === 'in review') return cnt + (USE_TW ? ' 項審查中' : ' 项审查中');
+            if (k === 'active') return cnt + (USE_TW ? ' 項執行中' : ' 项活跃');
+            if (k === 'working') return cnt + (USE_TW ? ' 個工作中' : ' 个工作中');
+            if (k === 'waiting') return cnt + (USE_TW ? ' 個等待中' : ' 个等待中');
+            if (k === 'done') return cnt + (USE_TW ? ' 個已完成' : ' 个已完成');
+            return cnt + (USE_TW ? ' 個討論串進行中' : ' 条工作线进行中');
+        }
+        const liveTipMatch = trimmed.match(/^(Thinking|Latest action):\s*(.+)$/s);
+        if (liveTipMatch) {
+            const lbl = liveTipMatch[1] === 'Thinking'
+                ? '思考中：'
+                : (USE_TW ? '最新動作：' : '最新动作：');
+            return lbl + liveTipMatch[2];
+        }
+        const lastSeenMatch = trimmed.match(/^last seen\s+(.+)\s+ago$/i);
+        if (lastSeenMatch) {
+            const dur = formatCompactDuration(lastSeenMatch[1]);
+            return (USE_TW ? '最近活躍於 ' : '最近活跃于 ') + dur + ' 前';
+        }
+        const sysAlertMatch = trimmed.match(/^@(\S+)\s+(ran out of quota|looks stuck|hit an error)$/i);
+        if (sysAlertMatch) {
+            const k = sysAlertMatch[2].toLowerCase();
+            const msg = k === 'ran out of quota'
+                ? (USE_TW ? ' 配額已耗盡' : ' 配额已耗尽')
+                : k === 'looks stuck' ? ' 似乎卡住了' : (USE_TW ? ' 發生錯誤' : ' 发生错误');
+            return '@' + sysAlertMatch[1] + msg;
+        }
+        const exportPctMatch = trimmed.match(/^Exporting\s+(\d+%)$/i);
+        if (exportPctMatch) {
+            return (USE_TW ? '正在匯出 ' : '正在导出 ') + exportPctMatch[1];
+        }
+        const exportFileMatch = trimmed.match(/^(Exporting|Rendering)\s+(.+?)(?:\.\.\.|…)$/i);
+        if (exportFileMatch) {
+            const verb = exportFileMatch[1].toLowerCase() === 'exporting'
+                ? (USE_TW ? '正在匯出 ' : '正在导出 ')
+                : (USE_TW ? '正在算圖 ' : '正在渲染 ');
+            return verb + exportFileMatch[2] + '…';
+        }
+        const exportedMatch = trimmed.match(/^Exported\s+(.+?)\s+\((.+)\)$/i);
+        if (exportedMatch) {
+            const meta = translateSwarmComposite(exportedMatch[2]) || exportedMatch[2];
+            return (USE_TW ? '已匯出 ' : '已导出 ') + exportedMatch[1] + '（' + meta + '）';
+        }
+        const downloadMatch = trimmed.match(/^Download\s+(.+)$/i);
+        if (downloadMatch) {
+            return (USE_TW ? '下載 ' : '下载 ') + downloadMatch[1];
+        }
+        const replayTitleMatch = trimmed.match(/^(.+?)\s+graph replay$/i);
+        if (replayTitleMatch) {
+            return replayTitleMatch[1] + (USE_TW ? ' 關係圖重播' : ' 关系图回放');
+        }
+        const narratorFailMatch = trimmed.match(/^The narrator's last step failed:\s*(.+)$/i);
+        if (narratorFailMatch) {
+            return (USE_TW ? '解說員最後一步失敗：' : '解说员最后一步失败：') + narratorFailMatch[1];
         }
         const noPostsTipMatch = trimmed.match(/^([^:]+):\s*No posts yet$/i);
         if (noPostsTipMatch) {
@@ -388,11 +735,19 @@
                 if (s === 'Active') { changed = true; return USE_TW ? '執行中' : '活跃'; }
                 if (s === 'Waiting') { changed = true; return '等待中'; }
                 if (s === 'Killed') { changed = true; return USE_TW ? '已終止' : '已终止'; }
+                if (s === 'Swarm start') { changed = true; return USE_TW ? '蜂群啟動' : '蜂群启动'; }
                 if (/^\d+\s+posts?$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+posts?$/i, (_, n) => n + (USE_TW ? ' 則訊息' : ' 条消息')); }
+                if (/^\d+\s+members?$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+members?$/i, (_, n) => n + (USE_TW ? ' 位成員' : ' 位成员')); }
+                if (/^\d+\s+frames?$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+frames?$/i, (_, n) => n + (USE_TW ? ' 格' : ' 帧')); }
                 if (/^\d+\s+steps?$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+steps?$/i, '$1 步'); }
                 if (/^\d+\s+unaddressed$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+unaddressed$/i, (_, n) => n + (USE_TW ? ' 則未指定對象' : ' 条未指定对象')); }
                 if (/^\d+\s+unread$/i.test(s)) { changed = true; return s.replace(/^(\d+)\s+unread$/i, (_, n) => n + (USE_TW ? ' 則未讀' : ' 条未读')); }
                 if (/^runs on\s+(.+)$/i.test(s)) { changed = true; return s.replace(/^runs on\s+(.+)$/i, (_, h) => (USE_TW ? '執行於 ' : '运行于 ') + h); }
+                if (Object.prototype.hasOwnProperty.call(SCOPED_SWARM_MAP, s)) { changed = true; return SCOPED_SWARM_MAP[s][USE_TW ? 1 : 0]; }
+                if (!s.includes('·') && !s.includes('\n')) {
+                    const sub = translateSwarmComposite(s);
+                    if (sub !== null) { changed = true; return sub; }
+                }
                 return seg;
             });
             return segs.join(' · ');
@@ -551,15 +906,15 @@
         december: 12, dec: 12
     };
 
-    /** Format English calendar dates into Chinese YYYY 年 M 月 D 日 form. */
+    /** Format English calendar dates into Chinese YYYY 年 M 月 D 日 (or M 月 D 日) form. */
     function formatEnglishDate(raw) {
         const s = String(raw || '').trim();
-        let m = s.match(/^([A-Za-z]+)\.?\s+(\d{1,2}),\s*(\d{4})$/);
+        let m = s.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,\s*(\d{4})$/i);
         if (m) {
             const mon = MONTH_NAME_TO_NUM[m[1].toLowerCase()];
             if (mon) return m[3] + ' 年 ' + mon + ' 月 ' + parseInt(m[2], 10) + ' 日';
         }
-        m = s.match(/^(\d{1,2})\s+([A-Za-z]+)\.?\s+(\d{4})$/);
+        m = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?\s+(\d{4})$/i);
         if (m) {
             const mon = MONTH_NAME_TO_NUM[m[2].toLowerCase()];
             if (mon) return m[3] + ' 年 ' + mon + ' 月 ' + parseInt(m[1], 10) + ' 日';
@@ -567,6 +922,16 @@
         m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (m) {
             return m[1] + ' 年 ' + parseInt(m[2], 10) + ' 月 ' + parseInt(m[3], 10) + ' 日';
+        }
+        m = s.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?$/i);
+        if (m) {
+            const mon = MONTH_NAME_TO_NUM[m[1].toLowerCase()];
+            if (mon) return mon + ' 月 ' + parseInt(m[2], 10) + ' 日';
+        }
+        m = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?$/i);
+        if (m) {
+            const mon = MONTH_NAME_TO_NUM[m[2].toLowerCase()];
+            if (mon) return mon + ' 月 ' + parseInt(m[1], 10) + ' 日';
         }
         return s;
     }
@@ -638,14 +1003,16 @@
 
     const DYNAMIC_RULES = [
         // 列表展开 / 收起明细
-        [/^Show\s+(\d+)\s+more(\s+(results?|items?|commands?|options?))?(\.\.\.)?$/i, (m, num, p2, type) => {
+        // 省略号跟着原文：「Show 3 more」不补「...」
+        [/^Show\s+(\d+)\s+more(\s+(results?|items?|commands?|options?))?(\.\.\.|…)?$/i, (m, num, p2, type, ell) => {
+            const tail = ell || '';
             if (type) {
-                if (/result/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個結果...") : ("显示另外 " + num + " 个结果...");
-                if (/command/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個指令...") : ("显示另外 " + num + " 个命令...");
-                if (/item/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個項目...") : ("显示另外 " + num + " 个项目...");
-                if (/option/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個選項...") : ("显示另外 " + num + " 个选项...");
+                if (/result/i.test(type)) return (USE_TW ? ("顯示另外 " + num + " 個結果") : ("显示另外 " + num + " 个结果")) + tail;
+                if (/command/i.test(type)) return (USE_TW ? ("顯示另外 " + num + " 個指令") : ("显示另外 " + num + " 个命令")) + tail;
+                if (/item/i.test(type)) return (USE_TW ? ("顯示另外 " + num + " 個項目") : ("显示另外 " + num + " 个项目")) + tail;
+                if (/option/i.test(type)) return (USE_TW ? ("顯示另外 " + num + " 個選項") : ("显示另外 " + num + " 个选项")) + tail;
             }
-            return USE_TW ? ("顯示另外 " + num + " 個...") : ("显示另外 " + num + " 个...");
+            return (USE_TW ? ("顯示另外 " + num + " 個") : ("显示另外 " + num + " 个")) + tail;
         }],
         [/^Show\s+(\d+)\s+breakdown(s)?$/i, (m, num) => USE_TW ? ("顯示 " + num + " 項明細") : ("显示 " + num + " 项细目")],
         [/^Hide\s+breakdown(s)?$/i, () => USE_TW ? "收起明細" : "收起细目"],
@@ -707,10 +1074,73 @@
         [/^(?:Refreshes|You have (?:used (?:some|all) of|reached) your (?:weekly|5-hour) limit, it will fully refresh) in (\d+) minutes?\.?$/i, (m, min) => USE_TW ? (min + " 分鐘後更新") : (min + " 分钟后刷新")],
         [/^(?:Refreshes|You have (?:used (?:some|all) of|reached) your (?:weekly|5-hour) limit, it will fully refresh) in less than a minute\.?$/i, () => USE_TW ? "不到 1 分鐘後更新" : "不到 1 分钟后刷新"],
         [/^(?:Refreshes|You have (?:used (?:some|all) of|reached) your (?:weekly|5-hour) limit, it will fully refresh) in a few seconds\.?$/i, () => USE_TW ? "幾秒後更新" : "几秒后刷新"],
-        [/^Available AI Credits: (\d+)$/i, (m, num) => USE_TW ? ("可用 AI 點數: " + num) : ("可用 AI 额度: " + num)],
+        [/^Available AI Credits:\s*(.+)$/i, (m, val) => (USE_TW ? "可用 AI 點數：" : "可用 AI 额度：") + val],
         [/^Your plan's baseline quota will refresh on (.+?)\.?\s*To continue using this model now, enable AI Credit overages\.?$/i, (m, when) => USE_TW ? ("您方案的基準配額將於 " + when + " 重新整理。如需立即繼續使用此模型，請啟用 AI 點數超額使用。") : ("您方案的基础配额将于 " + when + " 刷新。如需立即继续使用此模型，请启用 AI 额度超量使用。")],
-        [/^You have hit your weekly limit, it refreshes in (.+?)\. If on a supported paid plan, you can use AI credits in the interim or upgrade to a higher tier\.$/i, (m, when) => USE_TW ? ("您已達到每週額度限制，將於 " + when + " 重新整理。若您使用受支援的付費方案，可在此期間使用 AI 點數，或升級至更高層級。") : ("您已达到每周额度限制，将于 " + when + " 刷新。若您使用受支持的付费计划，可在此期间使用 AI 额度，或升级至更高层级。")],
-        [/^You have hit your weekly limit, the (\d+)-hour limit does not currently apply\. Your weekly limit will fully refresh in (.+?)\.$/i, (m, h, when) => USE_TW ? ("您已達到每週額度限制，" + h + " 小時限制目前不適用。您的每週額度限制將於 " + when + " 完全更新。") : ("您已达到每周额度限制，" + h + " 小时限制目前不适用。您的每周额度限制将于 " + when + " 完全刷新。")],
+        [/^You have hit your (weekly|daily|monthly|\d+-hour) limit,\s*it (?:will refresh|refreshes) in (.+?)\.\s*If on a supported paid plan, you can use AI credits in the interim(?:\s*(or upgrade to a higher tier))?\.?$/i, (m, unit, when, upgrade) => {
+            const u = unit.toLowerCase();
+            const uTw = u === 'weekly' ? '每週額度' : u === 'daily' ? '每日額度' : u === 'monthly' ? '每月額度' : (' ' + u.replace(/-hour$/i, '') + ' 小時');
+            const uSc = u === 'weekly' ? '每周额度' : u === 'daily' ? '每日额度' : u === 'monthly' ? '每月额度' : (' ' + u.replace(/-hour$/i, '') + ' 小时');
+            const dur = formatUsageDuration(when) || when;
+            const upTw = upgrade ? '，或升級至更高層級' : '';
+            const upSc = upgrade ? '，或升级至更高层级' : '';
+            return USE_TW
+                ? ("您已達到" + uTw + "限制，將於 " + dur + "重設。若您使用受支援的付費方案，可在此期間使用 AI 點數" + upTw + "。")
+                : ("您已达到" + uSc + "限制，将于 " + dur + "刷新。若您使用受支持的付费计划，可在此期间使用 AI 额度" + upSc + "。");
+        }],
+        [/^You have hit your (weekly|daily|monthly|\d+-hour) limit,\s*(?:so\s+)?the (weekly|daily|monthly|\d+-hour) limit does not currently apply\.\s*Your (?:weekly|daily|monthly|\d+-hour) limit will (?:(fully)\s+)?refresh in (.+?)\.?$/i, (m, hit, other, fully, when) => {
+            const label = (w, tw) => {
+                const l = w.toLowerCase();
+                if (l === 'weekly') return tw ? '每週額度' : '每周额度';
+                if (l === 'daily') return tw ? '每日額度' : '每日额度';
+                if (l === 'monthly') return tw ? '每月額度' : '每月额度';
+                const h = l.replace(/-hour$/i, '');
+                return tw ? (' ' + h + ' 小時') : (' ' + h + ' 小时');
+            };
+            const hitTw = label(hit, true), otherTw = label(other, true).trimStart();
+            const hitSc = label(hit, false), otherSc = label(other, false).trimStart();
+            const dur = formatUsageDuration(when) || when;
+            return USE_TW
+                ? ("您已達到" + hitTw + "限制，" + otherTw + "限制目前不適用。您的" + hitTw + "限制將於 " + dur + (fully ? "完全重設" : "重設") + "。")
+                : ("您已达到" + hitSc + "限制，" + otherSc + "限制目前不适用。您的" + hitSc + "限制将于 " + dur + (fully ? "完全刷新" : "刷新") + "。");
+        }],
+        [/^You have used some of your (weekly|daily|monthly|\d+-hour) limit,\s*it will (?:(fully)\s+)?refresh in (.+?)\.?$/i, (m, unit, fully, when) => {
+            const l = unit.toLowerCase();
+            const uTw = l === 'weekly' ? '每週額度' : l === 'daily' ? '每日額度' : l === 'monthly' ? '每月額度' : (' ' + l.replace(/-hour$/i, '') + ' 小時');
+            const uSc = l === 'weekly' ? '每周额度' : l === 'daily' ? '每日额度' : l === 'monthly' ? '每月额度' : (' ' + l.replace(/-hour$/i, '') + ' 小时');
+            const dur = /^less than a minute$/i.test(when.trim()) ? (USE_TW ? '不到 1 分鐘' : '不到 1 分钟') : (formatUsageDuration(when) || when);
+            return USE_TW
+                ? ("您已使用部分" + uTw + "限制，將於 " + dur + (fully ? "完全重設" : "重設") + "。")
+                : ("您已使用部分" + uSc + "限制，将于 " + dur + (fully ? "完全刷新" : "刷新") + "。");
+        }],
+        [/^Models within this group:\s*(.+)$/i, (m, models) => USE_TW ? ("此群組包含的模型：" + models) : ("此分组包含的模型：" + models)],
+        [/^(.+?)\s+(Weekly|Daily|Monthly|Five[- ]Hour|5[- ]Hour)\s+Limit$/i, (m, prefix, unit) => {
+            const u = unit.toLowerCase();
+            const uTw = u === 'weekly' ? '每週上限' : u === 'daily' ? '每日上限' : u === 'monthly' ? '每月上限' : '5 小時上限';
+            const uSc = u === 'weekly' ? '每周限额' : u === 'daily' ? '每日限额' : u === 'monthly' ? '每月限额' : '5 小时限额';
+            return USE_TW ? (prefix + " " + uTw) : (prefix + " " + uSc);
+        }],
+        [/^For paid Pro plans,\s*(.+?)\s+quota is separate\.\s*Higher\s+\1\s+quota\s*\(included as part of the larger\s+(.+?)\s+quota bucket\)\s*is available on Ultra plans\.?$/i, (m, model, bucket) => USE_TW ? ("在 Pro 付費方案中，" + model + " 配額會獨立計算。Ultra 方案則提供更高的 " + model + " 配額（納入較大的 " + bucket + " 配額池中）。") : ("在 Pro 付费方案中，" + model + " 配额独立计算。Ultra 方案提供更高的 " + model + " 配额（包含在更大的 " + bucket + " 配额池中）。")],
+        [/^You can upgrade to (?:a|the)\s+(higher\s+)?(.+?)\s+plan to receive (?:(the highest)|higher) rate limits\.?$/i, (m, higherAdj, plan, highest) => {
+            const ratePart = highest ? '最高的速率限制。' : '更高的速率限制。';
+            if (USE_TW) {
+                return higherAdj
+                    ? ('您可以升級至更高等級的 ' + plan + ' 方案以獲得' + ratePart)
+                    : ('您可以升級至 ' + plan + ' 方案以獲得' + ratePart);
+            }
+            return higherAdj
+                ? ('您可以升级到更高级别的 ' + plan + ' 计划以获得' + ratePart)
+                : ('您可以升级到 ' + plan + ' 计划以获得' + ratePart);
+        }],
+        [/^The original\s+(.+?)\s+model for advanced workflows\.?$/i, (m, model) => USE_TW ? ("適合進階工作流程的初代 " + model + " 模型") : ("适用于高级工作流的初代 " + model + " 模型")],
+        [/^Waiting for (\d+) timers$/i, (m, n) => USE_TW ? ("正在等待 " + n + " 個計時器") : ("正在等待 " + n + " 个计时器")],
+        [/^Waiting for timer$/i, () => USE_TW ? "正在等待計時器" : "正在等待计时器"],
+        [/^(\d+) (subagents\/tasks|subagents?|tasks?) running$/i, (m, n, kind) => {
+            const k = kind.toLowerCase();
+            const lTw = k === 'subagents/tasks' ? ' 個子代理／任務' : k.startsWith('subagent') ? ' 個子代理' : ' 個任務';
+            const lSc = k === 'subagents/tasks' ? ' 个子智能体/任务' : k.startsWith('subagent') ? ' 个子智能体' : ' 个任务';
+            return USE_TW ? (n + lTw + "執行中") : (n + lSc + "运行中");
+        }],
+        [/^(\d+) subagents? blocked$/i, (m, n) => USE_TW ? (n + " 個子代理受阻") : (n + " 个子智能体受阻")],
 
         // 预设、权限与工具 Token 预算
         [/^Learn more about (.+)$/i, (m, p) => {
@@ -729,7 +1159,8 @@
         [/^Yes, allow (.+) in this conversation$/i, (m, target) => USE_TW ? ("是，在此對話中允許 " + target) : ("是，在此会话中允许 " + target)],
         [/^Yes, always allow (.+)$/i, (m, target) => USE_TW ? ("是，一律允許 " + target) : ("是，始终允许 " + target)],
         [/^(\d+) tools? enabled$/i, (m, num) => USE_TW ? (num + " 個工具已啟用") : (num + " 个工具已启用")],
-        [/^(\d+)\s+tools$/i, (m, num) => num + (USE_TW ? " 個工具" : " 个工具")],
+        [/^(\d+)\s+tools?$/i, (m, num) => num + (USE_TW ? " 個工具" : " 个工具")],
+        [/^(\d+)\s+tools?\s+·\s+sign in for more$/i, (m, num) => num + (USE_TW ? " 個工具 · 登入以取得更多" : " 个工具 · 登录以获取更多")],
         [/^(\d+)\s+tools?\s+excluded$/i, (m, num) => num + (USE_TW ? " 個工具已排除" : " 个工具已排除")],
         [/^Exceeded the rules token budget\.\s+Full rule content\s+\(([\d,]+)\s+tokens?\)\s+was replaced with a lightweight file-path pointer in context\.$/i, (m, num) => USE_TW ? ("已超出規則 Token 預算。完整規則內容 (" + num + " 個 Token) 已在上下文中取代為輕量級檔案路徑指標。") : ("已超出规则 Token 预算。完整规则内容 (" + num + " 个 Token) 已在上下文中替换为轻量级文件路径指针。")],
         [/^All tools in this MCP server\s+\(([\d,]+)\s+tokens?\)\s+exceeded the customization budget and were excluded from context\.$/i, (m, num) => USE_TW ? ("此 MCP 伺服器中的所有工具 (" + num + " 個 Token) 均已超出自訂項預算，並已從上下文中排除。") : ("此 MCP 服务器中的所有工具 (" + num + " 个 Token) 均已超出自定义项预算，并已从上下文中排除。")],
@@ -844,7 +1275,14 @@
         [/^When toggled on,\s*(.+?)\s+collects usage data to help Google enhance performance and features\.?$/i, (m, app) => USE_TW ? ("開啟後，" + app + " 會收集使用資料以協助 Google 改善效能與功能。") : ("开启后，" + app + " 会收集使用数据以帮助 Google 改进性能和功能。")],
         [/^When toggled on,\s*(.+?)\s+will use your AI credits to fulfill model requests once you're out of model quota\.\s*(.+?)\s+will always use your model quota first before using AI credits\.?$/i, (m, a1, a2) => USE_TW ? ("開啟後，當您的模型配額用盡時，" + a1 + " 將使用您的 AI 點數處理模型請求。" + a2 + " 永遠會優先使用模型配額，再使用 AI 點數。") : ("开启后，当您的模型配额用尽时，" + a1 + " 将使用您的 AI 积分处理模型请求。" + a2 + " 始终会优先使用模型配额，再使用 AI 积分。")],
         [/^Receive product updates,\s*tips,\s*and promotions from Google\s+(.+?)\s+via email\.?$/i, (m, app) => USE_TW ? ("透過電子郵件接收來自 Google " + app + " 的產品更新、技巧與優惠資訊。") : ("通过电子邮件接收来自 Google " + app + " 的产品更新、技巧和促销信息。")],
-        [/^Agents created by this\s+(.+?)\s+run in a dedicated\s+(.+?)\s+with its own permissions\.\s*You can change the permissions in the\s+(.+?)\s+settings page\.?$/i, (m, kind, scope, scope2) => USE_TW ? ("此 " + kind + " 建立的代理會在具有獨立權限的專屬 " + scope + " 中執行。您可以在 " + scope2 + " 設定頁面變更權限。") : ("此 " + kind + " 创建的智能体会在具有独立权限的专用 " + scope + " 中运行。您可以在 " + scope2 + " 设置页面更改权限。")],
+        [/^Agents created by this\s+(.+?)\s+run in a dedicated\s+(.+?)\s+with its own permissions\.\s*You can change the permissions in the\s+(.+?)\s+settings page\.?$/i, (m, kind, scope, scope2) => {
+            // 名词（automation、project）先查词典：译成中文时与前后中文之间不留空格，保留英文时加空格
+            const term = w => {
+                const t = w.toLowerCase() === 'automation' ? (USE_TW ? '自動化' : '自动化') : (lookupDict(w) || w);
+                return /[㐀-鿿]/.test(t) ? t : ' ' + t + ' ';
+            };
+            return USE_TW ? ("此" + term(kind) + "建立的代理會在具有獨立權限的專屬" + term(scope) + "中執行。您可以在" + term(scope2) + "設定頁面變更權限。") : ("此" + term(kind) + "创建的智能体会在具有独立权限的专用" + term(scope) + "中运行。您可以在" + term(scope2) + "设置页面更改权限。");
+        }],
         [/^Stop\s+(\d+)\s+agents?\?$/i, (m, count) => USE_TW ? ("要停止 " + count + " 個代理嗎？") : ("要停止 " + count + " 个智能体吗？")],
         [/^(?:(Exploring|Explored|Editing|Edited|Running|Ran)\s+)?(\d+)\s+(files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?)(?:,\s*(?:(Exploring|Explored|Editing|Edited|Running|Ran)\s+)?(\d+)\s+(files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?))*$/i, (m) => {
             const verbMap = USE_TW
@@ -861,6 +1299,37 @@
                 return v + pm[2] + ' ' + n;
             }).join('，');
         }],
+        [/^(?:(?:Exploring|Explored|Editing|Edited|Running|Ran|Searching|Searched|Using|Used|Reading|Read|Writing|Wrote|Viewing|Viewed|Checking|Checked)(?:\s+(?:(?:\d+\s+)?(?:files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|web|mcp tools?)))?|\d+\s+(?:files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|mcp tools?))(?:\s*,\s*(?:(?:Exploring|Explored|Editing|Edited|Running|Ran|Searching|Searched|Using|Used|Reading|Read|Writing|Wrote|Viewing|Viewed|Checking|Checked)(?:\s+(?:(?:\d+\s+)?(?:files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|web|mcp tools?)))?|\d+\s+(?:files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|mcp tools?)))*$/i, (m) => {
+            if (!m.includes(',') && !/\s+(?:files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|web|mcp tools?)$/i.test(m)) {
+                return m;
+            }
+            const verbMap = USE_TW
+                ? { exploring: '正在探索', explored: '已探索', editing: '正在編輯', edited: '已編輯', running: '正在執行', ran: '已執行', searching: '正在搜尋', searched: '已搜尋', using: '正在使用', used: '已使用', reading: '正在讀取', read: '已讀取', writing: '正在寫入', wrote: '已寫入', viewing: '正在檢視', viewed: '已檢視', checking: '正在檢查', checked: '已檢查' }
+                : { exploring: '正在探索', explored: '已探索', editing: '正在编辑', edited: '已编辑', running: '正在运行', ran: '已运行', searching: '正在搜索', searched: '已搜索', using: '正在使用', used: '已使用', reading: '正在读取', read: '已读取', writing: '正在写入', wrote: '已写入', viewing: '正在查看', viewed: '已查看', checking: '正在检查', checked: '已检查' };
+            const nounMap = USE_TW
+                ? { file: '檔案', files: '檔案', folder: '資料夾', folders: '資料夾', search: '搜尋', searches: '搜尋', command: '指令', commands: '指令', task: '任務', tasks: '任務', page: '網頁', pages: '網頁', browser: '瀏覽器', browsers: '瀏覽器', image: '圖片', images: '圖片', action: '操作', actions: '操作', artifact: '成品', artifacts: '成品', tool: '工具', tools: '工具', web: '網頁', 'mcp tool': 'MCP 工具', 'mcp tools': 'MCP 工具' }
+                : { file: '文件', files: '文件', folder: '文件夹', folders: '文件夹', search: '搜索', searches: '搜索', command: '命令', commands: '命令', task: '任务', tasks: '任务', page: '网页', pages: '网页', browser: '浏览器', browsers: '浏览器', image: '图片', images: '图片', action: '操作', actions: '操作', artifact: '工件', artifacts: '工件', tool: '工具', tools: '工具', web: '网页', 'mcp tool': 'MCP 工具', 'mcp tools': 'MCP 工具' };
+            const countNounMap = USE_TW
+                ? { file: '個檔案', files: '個檔案', folder: '個資料夾', folders: '個資料夾', search: '次搜尋', searches: '次搜尋', command: '個指令', commands: '個指令', task: '個任務', tasks: '個任務', page: '個網頁', pages: '個網頁', browser: '次瀏覽器操作', browsers: '次瀏覽器操作', image: '張圖片', images: '張圖片', action: '項操作', actions: '項操作', artifact: '個成品', artifacts: '個成品', tool: '個工具', tools: '個工具', 'mcp tool': '個 MCP 工具', 'mcp tools': '個 MCP 工具' }
+                : { file: '个文件', files: '个文件', folder: '个文件夹', folders: '个文件夹', search: '次搜索', searches: '次搜索', command: '个命令', commands: '个命令', task: '个任务', tasks: '个任务', page: '个网页', pages: '个网页', browser: '次浏览器操作', browsers: '次浏览器操作', image: '张图片', images: '张图片', action: '项操作', actions: '项操作', artifact: '个工件', artifacts: '个工件', tool: '个工具', tools: '个工具', 'mcp tool': '个 MCP 工具', 'mcp tools': '个 MCP 工具' };
+            return m.split(/\s*,\s*/).map(part => {
+                const pm = part.trim().match(/^(?:(Exploring|Explored|Editing|Edited|Running|Ran|Searching|Searched|Using|Used|Reading|Read|Writing|Wrote|Viewing|Viewed|Checking|Checked)(?:\s+(?:(\d+)\s+)?(files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|web|mcp tools?))?|(\d+)\s+(files?|folders?|searches?|commands?|tasks?|pages?|browsers?|images?|actions?|artifacts?|tools?|mcp tools?))$/i);
+                if (!pm) return part;
+                if (pm[4]) {
+                    return pm[4] + ' ' + (countNounMap[pm[5].toLowerCase()] || pm[5]);
+                }
+                const v = verbMap[pm[1].toLowerCase()] || pm[1];
+                if (pm[2]) {
+                    return v + ' ' + pm[2] + ' ' + (countNounMap[pm[3].toLowerCase()] || pm[3]);
+                }
+                if (pm[3]) {
+                    return v + (nounMap[pm[3].toLowerCase()] || pm[3]);
+                }
+                return v;
+            }).join('，');
+        }],
+        [/^exit_plan_mode$/, () => USE_TW ? '退出規劃模式' : '退出规划模式'],
+        [/^enter_plan_mode$/, () => USE_TW ? '進入規劃模式' : '进入规划模式'],
 
         // Swarm 伴生面板 (Sidecar) 动态消息、回放、关系图与概览状态
         [/^(\d+)\s+posts?$/i, (m, n) => n + (USE_TW ? " 則訊息" : " 条消息")],
@@ -919,7 +1388,7 @@
         [/^(\d+)\s+Drafts?$/i, (m, n) => n + (USE_TW ? " 則草稿" : " 条草稿")],
         [/^Resume\s+(\d+)\s+comment drafts?$/i, (m, n) => USE_TW ? ("恢復 " + n + " 則評論草稿") : ("恢复 " + n + " 条评论草稿")],
         [/^Couldn't connect to\s+(.+)$/i, (m, rest) => (USE_TW ? "無法連線至 " : "无法连接到 ") + rest],
-        [/^Connecting to\s+(.+?)(\.\.\.|…)?$/i, (m, host) => (USE_TW ? "正在連線至 " : "正在连接到 ") + host + "..."],
+        [/^Connecting to\s+(.+?)(\.\.\.|…)?$/i, (m, host, ell) => (USE_TW ? "正在連線至 " : "正在连接到 ") + host + (ell || "")],
         [/^Connected to\s+(.+)$/i, (m, host) => (USE_TW ? "已連線至 " : "已连接到 ") + host],
         [/^SSH Config\s*\((.+)\)$/i, (m, cfg) => (USE_TW ? "SSH 設定 (" : "SSH 配置 (") + cfg + ")"],
         [/^(\d+)\s+hidden hosts?$/i, (m, n) => n + (USE_TW ? " 個已隱藏的主機" : " 个已隐藏的主机")],
@@ -1175,11 +1644,398 @@
                 : (model + ' 将自 ' + formatEnglishDate(dateStr) + ' 起不再在您当前的方案中提供')) + (dot ? '。' : '');
         }],
 
+        // v2.35.1 模型悬浮说明、下架日期预告与选择器状态属性
+        [/^Use\s+(.+?)\s+for better quality with lower quota usage\.(?:\s*Leaving on\s+(.+?)(\.)?)?$/i, (m, model, dateStr, dot) => {
+            const base = USE_TW
+                ? ('建議使用 ' + model.trim() + '，以更低的配額消耗獲得更佳品質。')
+                : ('建议使用 ' + model.trim() + '，以更低的配额消耗获得更佳质量。');
+            if (!dateStr) return base;
+            const dFmt = formatEnglishDate(dateStr.replace(/\.$/, ''));
+            const sep = /[\u4e00-\u9fff]$/.test(dFmt) ? '' : ' ';
+            return base + (USE_TW ? ('將於 ' + dFmt + sep + '下線') : ('将于 ' + dFmt + sep + '下线')) + (dot || /\.$/.test(m.trim()) ? '。' : '');
+        }],
+        [/^Use\s+(.+?)\s+for better quality(?:\s+and faster responses)?\.(?:\s*Leaving on\s+(.+?)(\.)?)?$/i, (m, model, dateStr, dot) => {
+            const hasFast = /and faster responses/i.test(m);
+            const base = USE_TW
+                ? ('建議使用 ' + model.trim() + (hasFast ? '，兼顧更佳品質與更快回應。' : ' 以獲得更佳品質。'))
+                : ('建议使用 ' + model.trim() + (hasFast ? '，兼顾更佳质量与更快响应。' : ' 以获得更佳质量。'));
+            if (!dateStr) return base;
+            const dFmt = formatEnglishDate(dateStr.replace(/\.$/, ''));
+            const sep = /[\u4e00-\u9fff]$/.test(dFmt) ? '' : ' ';
+            return base + (USE_TW ? ('將於 ' + dFmt + sep + '下線') : ('将于 ' + dFmt + sep + '下线')) + (dot || /\.$/.test(m.trim()) ? '。' : '');
+        }],
+        [/^Use\s+(.+?)\s+instead\.(?:\s*Leaving on\s+(.+?)(\.)?)?$/i, (m, model, dateStr, dot) => {
+            const base = USE_TW ? ('建議改用 ' + model.trim() + '。') : ('建议改用 ' + model.trim() + '。');
+            if (!dateStr) return base;
+            const dFmt = formatEnglishDate(dateStr.replace(/\.$/, ''));
+            const sep = /[\u4e00-\u9fff]$/.test(dFmt) ? '' : ' ';
+            return base + (USE_TW ? ('將於 ' + dFmt + sep + '下線') : ('将于 ' + dFmt + sep + '下线')) + (dot || /\.$/.test(m.trim()) ? '。' : '');
+        }],
+        [/^Leaving on\s+([A-Za-z]+\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,\s*\d{4})?|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\.?(?:\s+\d{4})?|\d{4}-\d{2}-\d{2})(\.)?$/i, (m, dateStr, dot) => {
+            const dFmt = formatEnglishDate(dateStr);
+            const sep = /[\u4e00-\u9fff]$/.test(dFmt) ? '' : ' ';
+            return (USE_TW ? ('將於 ' + dFmt + sep + '下線') : ('将于 ' + dFmt + sep + '下线')) + (dot ? '。' : '');
+        }],
+        [/^(.+?)\.\s+Leaving on\s+([A-Za-z]+\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,\s*\d{4})?|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\.?(?:\s+\d{4})?|\d{4}-\d{2}-\d{2})(\.)?$/i, (m, firstSent, dateStr, dot) => {
+            const fNorm = norm(firstSent);
+            const fZh = translateExactOrDynamic(fNorm + '.') || translateExactOrDynamic(fNorm);
+            if (!fZh) return m;
+            const dFmt = formatEnglishDate(dateStr);
+            const sep = /[\u4e00-\u9fff]$/.test(dFmt) ? '' : ' ';
+            return fZh.replace(/[。.]+$/, '') + '。' + (USE_TW ? ('將於 ' + dFmt + sep + '下線') : ('将于 ' + dFmt + sep + '下线')) + (dot ? '。' : '');
+        }],
+        [/^Select model,\s*current:[ \t]*(.+)$/i, (m, cur) => (USE_TW ? '選擇模型，目前：' : '选择模型，当前：') + cur],
+        [/^Select model with\s+(.+)$/i, (m, key) => (USE_TW ? ('使用 ' + key + ' 選擇模型') : ('使用 ' + key + ' 选择模型'))],
+        [/^Model:[ \t]*(.+?),\s*(.+)$/i, (m, cur, reason) => {
+            const rZh = translateExactOrDynamic(norm(reason));
+            if (!rZh) return m;
+            return '模型：' + cur + '，' + rZh;
+        }],
+
         // v2.34.0 动态模板规则
         [/^Couldn't disconnect (.+?): (.+)$/, (m, target, reason) => (USE_TW ? '無法中斷 ' + target + ' 的連線：' : '无法断开 ' + target + ' 的连接：') + reason],
         [/^Failed to load page (.+?): (.+)$/, (m, page, reason) => (USE_TW ? '載入頁面 ' + page + ' 失敗：' : '加载页面 ' + page + ' 失败：') + reason],
         [/^More options for (.+)$/, (m, target) => target + (USE_TW ? ' 的更多選項' : ' 的更多选项')],
         [/^Opens the New Conversation screen for this (.+)$/, (m, target) => (USE_TW ? '開啟此 ' + translateNoun(target) + ' 的新對話畫面' : '打开此 ' + translateNoun(target) + ' 的新会话界面')],
+
+        // 账号资格、地区不支持与 v2.33/v2.34 补充模板
+        [/^Your current account is not eligible for\s+(.+?),\s*because it is not currently available in your\s+(?:location|region|country|area)\.?$/i, (m, app) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW
+                ? `您目前的帳戶不符合使用 ${app.trim()} 的資格，因為您所在的地區目前不支援此服務${period}`
+                : `您当前的账户无权使用 ${app.trim()}，因为您所在的地区目前暂不支持此服务${period}`;
+        }],
+        [/^(?:Your current|This)\s+account is not eligible (?:for|to use)\s+(.+?)\.?$/i, (m, app) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW
+                ? `目前帳戶不符合使用 ${app.trim()} 的資格${period}`
+                : `当前账户无权使用 ${app.trim()}${period}`;
+        }],
+        [/^Sorry,\s*this account is ineligible to use\s+(.+?)\.?$/i, (m, app) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW
+                ? `抱歉，目前帳戶無權使用 ${app.trim()}${period}`
+                : `抱歉，当前账户无权使用 ${app.trim()}${period}`;
+        }],
+        [/^Further action is required to use\s+(.+?)\.?$/i, (m, app) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW
+                ? `需要採取進一步行動才能使用 ${app.trim()}${period}`
+                : `需要采取进一步操作才能使用 ${app.trim()}${period}`;
+        }],
+        [/^(?:This service|The service|Antigravity|Jetski)\s+is not (?:currently\s+)?available in your\s+(?:location|region|country|area)\.?$/i, (m) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW ? `您所在的地區目前不支援此服務${period}` : `您所在的地区目前暂不支持此服务${period}`;
+        }],
+        [/^Your (?:current\s+)?(?:location|region|country|area) is not supported\.?$/i, (m) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW ? `目前不支援您所在的地區${period}` : `当前不支持您所在的地区${period}`;
+        }],
+        [/^(.+?)\s+is not (?:currently\s+)?available in your\s+(?:location|region|country|area)\.?$/i, (m, target) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW ? `您所在的地區目前不支援 ${target.trim()}${period}` : `您所在的地区目前暂不支持 ${target.trim()}${period}`;
+        }],
+        [/^You['’]re signing in on\s+(.+?)\.\s*Your sign-in stays on that machine\.?$/i, (m, host) => {
+            const period = /\.$/.test(m.trim()) ? '。' : '';
+            return USE_TW
+                ? `您正在 ${host.trim()} 上登入。您的登入狀態會保留在該電腦上${period}`
+                : `您正在 ${host.trim()} 上登录。您的登录状态将保留在该设备上${period}`;
+        }],
+        [/^Turn\s+(\d+)\s+of\s+(\d+)$/i, (m, c, tot) => USE_TW ? ('第 ' + c + ' 輪（共 ' + tot + ' 輪）') : ('第 ' + c + ' 轮（共 ' + tot + ' 轮）')],
+        [/^Go to turn\s+(\d+)\s+of\s+(\d+)$/i, (m, c, tot) => USE_TW ? ('前往第 ' + c + ' / ' + tot + ' 輪') : ('跳至第 ' + c + ' / ' + tot + ' 轮')],
+        [/^Recording shortcut for\s+(.+?)\.\s*Press keys to bind,\s*Enter to save,\s*Escape to cancel\.?$/i, (m, cmd) => USE_TW ? ('正在錄製「' + cmd + '」的快速鍵。按下按鍵以綁定，按 Enter 儲存，按 Escape 取消。') : ('正在录制“' + cmd + '”的快捷键。按下按键以绑定，按 Enter 保存，按 Escape 取消。')],
+        [/^Low contrast ratio\s*\((.+?):1\)\.\s*Text may be hard to read\.?$/i, (m, r) => USE_TW ? ('對比度過低（' + r + ':1），文字可能難以閱讀。') : ('对比度过低（' + r + ':1），文字可能难以阅读。')],
+        [/^(?:Auth|Authorization) code for\s+(.+)$/i, (m, app) => app + (USE_TW ? ' 的授權碼' : ' 的授权码')],
+        [/^Failed to save project Google3 configuration:\s*(.+)$/i, (m, err) => (USE_TW ? '儲存專案 Google3 設定失敗：' : '保存项目 Google3 配置失败：') + err],
+        [/^Failed to save project:\s*(.+)$/i, (m, err) => (USE_TW ? '儲存專案失敗：' : '保存项目失败：') + err],
+        [/^Available for\s+(.+?)\s+project$/i, (m, proj) => (USE_TW ? '適用於 ' : '适用于 ') + proj.trim() + (USE_TW ? ' 專案' : ' 项目')],
+
+        // v2.35.0 动态模板规则
+        [/^All (.+?) will be revoked\. The plugin will ask before doing this again\.$/, (m, target) => USE_TW ? ('將撤銷全部 ' + target + '。外掛程式在再次執行此操作前會先徵求您的同意。') : ('将撤销全部 ' + target + '。插件在再次执行此操作前会先征求您的同意。')],
+        [/^Dismiss:\s*(.+)$/, (m, target) => (USE_TW ? '關閉：' : '忽略：') + target],
+        [/^Move to\s+(.+)$/, (m, dest) => { const d = lookupDict(dest); return (USE_TW ? '移至' : '移动到') + (d && /^[\u3400-\u9fff]/.test(d) ? '' : ' ') + (d || dest); }],
+        [/^New\s+(.+?)\.\.\.$/, (m, kind) => (USE_TW ? '新增' : '新建') + translateNoun(kind) + '...'],
+        [/^No matching languages for "(.+)"$/, (m, q) => USE_TW ? ('找不到與「' + q + '」相符的語言') : ('未找到与“' + q + '”匹配的语言')],
+        [/^Remove from\s+(.+)$/, (m, target) => (USE_TW ? '從 ' : '从 ') + (lookupDict(target) || target) + ' 移除'],
+        [/^Revoke all:\s*(.+)$/, (m, target) => (USE_TW ? '全部撤銷：' : '全部撤销：') + target],
+        [/^Revoke:\s*(.+)$/, (m, target) => (USE_TW ? '撤銷：' : '撤销：') + target],
+
+        // v2.35.1 全面审计补充动态模板规则（配额、排程、时间、计数、Git/MCP/浏览器提示）
+        [/^You need (at least \d+|more) AI Credits to send messages\.\s*To continue using (.+?) now,\s*purchase more AI Credits\.(?:\s*Your plan's baseline quota will refresh on (.+?)\.?)?$/i, (m, amt, target, when) => {
+            const amtZh = /^more$/i.test(amt) ? '更多' : amt.replace(/^at least\s+/i, '至少 ');
+            const tTrim = target.trim();
+            const tPart = /^this model$/i.test(tTrim) ? '此模型' : (' ' + tTrim);
+            let res = USE_TW
+                ? ('您需要' + amtZh + ' AI 點數才能傳送訊息。若要立即繼續使用' + tPart + '，請購買更多 AI 點數。')
+                : ('您需要' + amtZh + ' AI 额度才能发送消息。要立即继续使用' + tPart + '，请购买更多 AI 额度。');
+            if (when) {
+                const cleanWhen = when.replace(/\.$/, '');
+                res += USE_TW ? ('您方案的基準配額將於 ' + cleanWhen + ' 重設。') : ('您方案的基础配额将于 ' + cleanWhen + ' 刷新。');
+            }
+            return res;
+        }],
+        [/^Your quota for (.+?) will reset on (.+?)\. Switch to another available model to continue\.$/i, (m, model, when) => {
+            const mZh = /^this model$/i.test(model.trim()) ? '此模型' : model.trim();
+            return USE_TW
+                ? ('您的 ' + mZh + ' 配額將於 ' + when + ' 重設。請切換至其他可用模型以繼續。')
+                : ('您的 ' + mZh + ' 配额将于 ' + when + ' 重置。请切换至其他可用模型以继续。');
+        }],
+        [/^Your quota for (.+?) has been reached\. Switch to another available model to continue\.$/i, (m, model) => {
+            const mZh = /^this model$/i.test(model.trim()) ? '此模型' : model.trim();
+            return USE_TW
+                ? ('您的 ' + mZh + ' 配額已用盡。請切換至其他可用模型以繼續。')
+                : ('您的 ' + mZh + ' 配额已用完。请切换至其他可用模型以继续。');
+        }],
+        [/^Your plan's baseline quota will refresh on (.+?)\.?$/i, (m, when) => USE_TW ? ('您方案的基準配額將於 ' + when + ' 重設。') : ('您方案的基础配额将于 ' + when + ' 刷新。')],
+        [/^Your plan:\s*(.+)$/i, (m, plan) => (USE_TW ? '您的方案：' : '您的方案：') + plan],
+        [/^Telemetry is turned off for your account\. This means (.+?) does not collect any of your prompts, content, or model responses, but will still collect general usage patterns \(e\.g\., feature adoption, active user counts\)\.?$/i, (m, app) => USE_TW
+            ? ('您的帳戶已關閉遙測資料收集。這表示 ' + app + ' 不會收集您的任何提示詞、內容或模型回覆，但仍會收集一般使用模式（例如功能採用率、活躍使用者數）。')
+            : ('您的账户已关闭遥测数据收集。这意味着 ' + app + ' 不会收集您的任何提示词、内容或模型回复，但仍会收集一般使用模式（例如功能采用率、活跃用户数）。')],
+        [/^Model unavailable,\s*retrying(?:\s+in\s+(\d+)s)?(?:\s*\(attempt\s+(\d+)\/(\d+)\))?$/i, (m, sec, att, max) => {
+            const attZh = att ? (USE_TW ? ('（第 ' + att + '/' + max + ' 次嘗試）') : ('（第 ' + att + '/' + max + ' 次尝试）')) : '';
+            if (sec) return USE_TW ? ('模型暫時無法使用，' + sec + ' 秒後重試' + attZh) : ('模型暂不可用，' + sec + ' 秒后重试' + attZh);
+            return USE_TW ? ('模型暫時無法使用，正在重試' + attZh) : ('模型暂不可用，正在重试' + attZh);
+        }],
+        [/^Waiting for command completion\s*\(up to (\d+) seconds\)$/i, (m, s) => USE_TW ? ('正在等待指令完成（最多 ' + s + ' 秒）') : ('正在等待命令完成（最多 ' + s + ' 秒）')],
+        [/^Thinking \((\d+)s\)\.\.\.$/i, (m, s) => '正在思考 (' + s + ' 秒)...'],
+        [/^Still thinking,\s*(\d+) seconds$/i, (m, s) => '仍在思考，' + s + ' 秒'],
+        [/^Working\s*·\s*(\d+)s$/i, (m, s) => '工作中 · ' + s + ' 秒'],
+        [/^Using browser(?:\s*·\s*(.+?))?(?:\s*\((\d+)s\))?$/i, (m, action, s) => {
+            const act = action ? (' · ' + (lookupDict(action) || action)) : '';
+            const dur = s ? (' (' + s + ' 秒)') : '';
+            return (USE_TW ? '正在使用瀏覽器' : '正在使用浏览器') + act + dur;
+        }],
+        [/^(Started|Stopped) voice chat\s*·\s*(.+)$/i, (m, act, rest) => {
+            const verb = /^Started/i.test(act) ? (USE_TW ? '已開始語音對話 · ' : '已开始语音对话 · ') : (USE_TW ? '已結束語音對話 · ' : '已结束语音对话 · ');
+            return verb + rest;
+        }],
+        [/^Turns?\s+(\d+)(?:[–-](\d+))?$/i, (m, a, b) => b ? ('第 ' + a + '–' + b + (USE_TW ? ' 輪' : ' 轮')) : ('第 ' + a + (USE_TW ? ' 輪' : ' 轮'))],
+        [/^(Turn|Tot):\s*(\d+)\/(\d+)$/i, (m, kind, a, b) => (/^Turn/i.test(kind) ? (USE_TW ? '輪次：' : '轮次：') : (USE_TW ? '總計：' : '总计：')) + a + '/' + b],
+        [/^(Today|Tomorrow|Yesterday)\s+(.+)$/i, (m, day, time) => {
+            const dLow = day.toLowerCase();
+            const dZh = dLow === 'today' ? '今天' : (dLow === 'tomorrow' ? '明天' : '昨天');
+            return dZh + ' ' + time;
+        }],
+        [/^Daily at\s+(.+)$/i, (m, t) => '每天 ' + t],
+        [/^Monthly on the\s+(.+?)\s+at\s+(.+)$/i, (m, d, t) => (USE_TW ? '每月 ' : '每月 ') + d + ' ' + t],
+        [/^Every\s+(\d+)\s+(hours?|minutes?)(.*)$/i, (m, n, unit, rest) => {
+            const uZh = /^hour/i.test(unit) ? (USE_TW ? ' 小時' : ' 小时') : (USE_TW ? ' 分鐘' : ' 分钟');
+            return '每 ' + n + uZh + (rest || '');
+        }],
+        [/^(?:(\d+)d\s+)?(?:(\d+)h\s+)?(?:(\d+)m|(\d+)s)\s+left$/i, (m, d, h, min, sec) => {
+            const parts = [];
+            if (d) parts.push(d + ' 天');
+            if (h) parts.push(h + (USE_TW ? ' 小時' : ' 小时'));
+            if (min) parts.push(min + (USE_TW ? ' 分鐘' : ' 分钟'));
+            if (sec) parts.push(sec + ' 秒');
+            return (USE_TW ? '剩餘 ' : '剩余 ') + parts.join(' ');
+        }],
+        [/^(\d+)\s+(image|video|audio|file)\s+attachments?$/i, (m, n, kind) => {
+            const kLow = kind.toLowerCase();
+            const kZh = kLow === 'image' ? (USE_TW ? '張圖片附件' : '张图片附件')
+                : kLow === 'video' ? (USE_TW ? '個影片附件' : '个视频附件')
+                : kLow === 'audio' ? (USE_TW ? '個音訊附件' : '个音频附件')
+                : (USE_TW ? '個檔案附件' : '个文件附件');
+            return n + ' ' + kZh;
+        }],
+        [/^(\d+)\s+attachments?$/i, (m, n) => n + (USE_TW ? ' 個附件' : ' 个附件')],
+        [/^(?:(.+?)\s+)?\((\d+)\s+(?:(image|video|audio|file)\s+)?attachments?\)$/i, (m, prefix, n, kind) => {
+            const kLow = kind ? kind.toLowerCase() : '';
+            const kZh = kLow === 'image' ? (USE_TW ? '張圖片附件' : '张图片附件')
+                : kLow === 'video' ? (USE_TW ? '個影片附件' : '个视频附件')
+                : kLow === 'audio' ? (USE_TW ? '個音訊附件' : '个音频附件')
+                : kLow === 'file' ? (USE_TW ? '個檔案附件' : '个文件附件')
+                : (USE_TW ? '個附件' : '个附件');
+            return (prefix ? prefix + ' ' : '') + '(' + n + ' ' + kZh + ')';
+        }],
+        [/^(\d+)\s+attachment\(s\)$/i, (m, n) => n + (USE_TW ? ' 個附件' : ' 个附件')],
+        [/^(\d+)\s+of\s+(\d+)$/i, (m, a, b) => a + ' / ' + b],
+        [/^(\d+)\s+archived conversations?$/i, (m, n) => n + (USE_TW ? ' 個已封存對話' : ' 个已归档会话')],
+        [/^(\d+)\s+background tasks?$/i, (m, n) => n + (USE_TW ? ' 個背景任務' : ' 个后台任务')],
+        [/^(\d+)\s+browser steps?$/i, (m, n) => n + (USE_TW ? ' 個瀏覽器步驟' : ' 个浏览器步骤')],
+        [/^(\d+)\s+models?\s+selected$/i, (m, n) => USE_TW ? ('已選取 ' + n + ' 個模型') : ('已选择 ' + n + ' 个模型')],
+        [/^(\d+)\s+waiting on you$/i, (m, n) => n + (USE_TW ? ' 項待您處理' : ' 项待您处理')],
+        [/^(\d+)\s+Files?\s+With Changes$/i, (m, n) => n + (USE_TW ? ' 個檔案有變更' : ' 个文件有更改')],
+        [/^(\d+)\s+files?\s+changed(?:\s+([+-]\d+(?:\s*[+-]\d+)?))?$/i, (m, n, diff) => n + (USE_TW ? ' 個檔案已變更' : ' 个文件已更改') + (diff ? (' ' + diff) : '')],
+        [/^(\d+)\s*\/\s*(\d+)\s+steps?$/i, (m, done, total) => done + '/' + total + (USE_TW ? ' 步驟' : ' 步骤')],
+        [/^(\d+)\s+lines?\s+added,\s*(\d+)\s+lines?\s+removed$/i, (m, a, b) => USE_TW ? ('新增 ' + a + ' 行，移除 ' + b + ' 行') : ('新增 ' + a + ' 行，删除 ' + b + ' 行')],
+        [/^(\d+)\s+(questions?|turns?|comments?|subagents?|chunks?|accounts?|rows?)$/i, (m, n, kind) => {
+            const k = kind.toLowerCase();
+            const mapZh = USE_TW
+                ? { question: '個問題', questions: '個問題', turn: '輪', turns: '輪', comment: '則評論', comments: '則評論', subagent: '個子代理', subagents: '個子代理', chunk: '個區塊', chunks: '個區塊', account: '個帳戶', accounts: '個帳戶', row: '列', rows: '列' }
+                : { question: '个问题', questions: '个问题', turn: '轮', turns: '轮', comment: '条评论', comments: '条评论', subagent: '个子智能体', subagents: '个子智能体', chunk: '个区块', chunks: '个区块', account: '个账户', accounts: '个账户', row: '行', rows: '行' };
+            return n + ' ' + (mapZh[k] || kind);
+        }],
+        [/^(\d+)\s+tasks?\s+running$/i, (m, n) => n + (USE_TW ? ' 個任務執行中' : ' 个任务运行中')],
+        [/^(\d+)\s+MCP servers? failed to start$/i, (m, n) => n + (USE_TW ? ' 個 MCP 伺服器啟動失敗' : ' 个 MCP 服务器启动失败')],
+        [/^Added MCP server "(.+?)",\s*but it failed to start:\s*(.+)$/i, (m, name, err) => USE_TW ? ('已新增 MCP 伺服器「' + name + '」，但啟動失敗：' + err) : ('已添加 MCP 服务器“' + name + '”，但启动失败：' + err)],
+        [/^MCP server (.+?) requires authentication:\s*sign in to "(.+?)" in the Accounts section of plugin "(.+?)"$/i, (m, srv, acc, plug) => USE_TW
+            ? ('MCP 伺服器 ' + srv + ' 需要身分驗證：請在「' + plug + '」外掛程式的「帳戶」區段中登入「' + acc + '」')
+            : ('MCP 服务器 ' + srv + ' 需要身份验证：请在“' + plug + '”插件的“账户”部分登录“' + acc + '”')],
+        [/^MCP server (.+?) requires authentication$/i, (m, srv) => USE_TW ? ('MCP 伺服器 ' + srv + ' 需要身分驗證') : ('MCP 服务器 ' + srv + ' 需要身份验证')],
+        [/^(\d+)\s+customizations? failed to load$/i, (m, n) => n + (USE_TW ? ' 項自訂項目載入失敗' : ' 项自定义项加载失败')],
+        [/^(\d+)\s+folders? in this project could not be loaded because their locations are invalid\.$/i, (m, n) => USE_TW ? ('此專案中有 ' + n + ' 個資料夾因位置無效而無法載入。') : ('此项目中有 ' + n + ' 个文件夹因位置无效而无法加载。')],
+        [/^(.+?) file uploads are not currently supported in remote mode$/i, (m, ext) => USE_TW ? ('遠端模式目前不支援上傳 ' + ext + ' 檔案') : ('远程模式暂不支持上传 ' + ext + ' 文件')],
+        [/^Pushed (\d+) commits? to (.+?)\.?$/i, (m, n, br) => USE_TW ? ('已推送 ' + n + ' 筆提交至 ' + br + '。') : ('已推送 ' + n + ' 个提交到 ' + br + '。')],
+        [/^Pushed to (.+?)\.?$/i, (m, br) => (USE_TW ? '已推送至 ' : '已推送到 ') + br + '。'],
+        [/^Published (.+?) to origin\.?$/i, (m, ref) => (USE_TW ? '已發布 ' : '已发布 ') + ref + ' 至 origin。'],
+        [/^Committed to (.+?)\.?$/i, (m, ref) => (USE_TW ? '已提交至 ' : '已提交到 ') + ref + '。'],
+        [/^Amended commit on (.+?)\.?$/i, (m, ref) => (USE_TW ? '已修訂 ' : '已修订 ') + ref + (USE_TW ? ' 上的提交。' : ' 上的提交。')],
+        [/^Checked out in (.+)$/i, (m, loc) => (USE_TW ? '已於 ' : '已在 ') + loc + (USE_TW ? ' 簽出' : ' 检出')],
+        [/^(Generating|Generated|Generate) with (.+?) 🍌$/i, (m, verb, model) => {
+            const vZh = /^Generating/i.test(verb) ? (USE_TW ? '正在使用 ' : '正在使用 ') : (/^Generated/i.test(verb) ? '已使用 ' : '使用 ');
+            return vZh + model + (USE_TW ? ' 產生 🍌' : ' 生成 🍌');
+        }],
+        [/^Ran command:\s*(.+)$/i, (m, cmd) => (USE_TW ? '已執行指令：' : '已运行命令：') + cmd],
+        [/^Used MCP tool:\s*(.+)$/i, (m, tool) => (USE_TW ? '已使用 MCP 工具：' : '已使用 MCP 工具：') + tool],
+        [/^Used tool:\s*(.+)$/i, (m, tool) => (USE_TW ? '已使用工具：' : '已使用工具：') + tool],
+        [/^(?:Searched web|Searched for|Internal search|Code search|Browser task):\s*"(.+)"$/i, (m, q) => {
+            const prefix = /^Searched web/i.test(m) ? (USE_TW ? '已搜尋網頁：' : '已搜索网页：')
+                : /^Searched for/i.test(m) ? (USE_TW ? '已搜尋：' : '已搜索：')
+                : /^Internal search/i.test(m) ? (USE_TW ? '內部搜尋：' : '内部搜索：')
+                : /^Code search/i.test(m) ? (USE_TW ? '程式碼搜尋：' : '代码搜索：')
+                : (USE_TW ? '瀏覽器任務：' : '浏览器任务：');
+            return prefix + (USE_TW ? ('「' + q + '」') : ('“' + q + '”'));
+        }],
+        [/^Searched for files:\s*(.+)$/i, (m, q) => (USE_TW ? '已搜尋檔案：' : '已搜索文件：') + q],
+        [/^Opened browser:\s*(.+)$/i, (m, u) => (USE_TW ? '已開啟瀏覽器：' : '已打开浏览器：') + u],
+        [/^Viewed (.+)$/i, (m, target) => (USE_TW ? '已檢視 ' : '已查看 ') + target],
+        [/^Listed directory (.+)$/i, (m, dir) => (USE_TW ? '已列出目錄 ' : '已列出目录 ') + dir],
+        [/^Read URL:\s*(.+)$/i, (m, u) => (USE_TW ? '已讀取網址：' : '已读取 URL：') + u],
+        [/^Invoked subagent:\s*(.+)$/i, (m, name) => (USE_TW ? '已呼叫子代理：' : '已调用子代理：') + name],
+        [/^Generated image:\s*"(.+)"$/i, (m, p) => (USE_TW ? '已產生圖片：「' : '已生成图片：“') + p + (USE_TW ? '」' : '”')],
+        [/^Agent finished:\s*(.+)$/i, (m, summary) => (USE_TW ? '代理已完成：' : '智能体已完成：') + summary],
+        [/^Side question failed:\s*(.+)$/i, (m, err) => (USE_TW ? '側邊提問失敗：' : '侧边提问失败：') + err],
+        [/^Side question \(conversation (.+?)\):\s*(.+)$/i, (m, cid, title) => (USE_TW ? '側邊提問（對話 ' : '侧边提问（会话 ') + cid + '）：' + title],
+        [/^Credentials expire in (.+?)\. Refresh credentials to keep this automation running$/i, (m, dur) => USE_TW ? ('憑證將於 ' + (formatUsageDuration(dur) || dur) + ' 後過期。請重新整理憑證以維持此自動化任務執行') : ('凭据将在 ' + (formatUsageDuration(dur) || dur) + ' 后过期。请刷新凭据以保持此自动化任务运行')],
+        [/^Connect an account for (.+?) so the agent can run automations\.$/i, (m, prov) => USE_TW ? ('請為 ' + prov + ' 連結帳戶，以便代理執行自動化任務。') : ('请为 ' + prov + ' 连接账户，以便智能体运行自动化任务。')],
+        [/^Runs even when your computer is off\.\s*(Schedules and events\.|Schedules only\.)$/i, (m, kind) => (USE_TW ? '即使電腦關機也會執行。' : '即使计算机关闭也会运行。') + (/events/i.test(kind) ? (USE_TW ? '排程與事件。' : '定时与事件。') : (USE_TW ? '僅排程。' : '仅定时。'))],
+        [/^The selected (.+?) can't be found\. Pick another (.+?) from the (.+?) selector to send\.$/i, (m, n1, n2, n3) => USE_TW
+            ? ('找不到所選的' + translateNoun(n1) + '。請從' + translateNoun(n3) + '選擇器選取其他' + translateNoun(n2) + '以傳送。')
+            : ('找不到所选的' + translateNoun(n1) + '。请从' + translateNoun(n3) + '选择器中选择其他' + translateNoun(n2) + '以发送。')],
+        [/^This (.+?) overrides your global permission settings\.$/i, (m, kind) => USE_TW ? ('此' + translateNoun(kind) + '會覆寫您的全域權限設定。') : ('此' + translateNoun(kind) + '会覆盖您的全局权限设置。')],
+        [/^(.+?) needs (.+?) to use your computer\.$/i, (m, app, perms) => {
+            // 「needs both」原本会译成「需要 这两项权限 权限」
+            if (/^both$/i.test(perms.trim())) return app + (USE_TW ? ' 需要這兩項權限才能操作您的電腦。' : ' 需要这两项权限才能控制您的电脑。');
+            const pZh = perms.replace(/Accessibility/gi, USE_TW ? '「輔助使用」' : '“辅助功能”').replace(/Screen Recording/gi, USE_TW ? '「螢幕錄製」' : '“屏幕录制”');
+            return app + ' 需要' + pZh + (USE_TW ? '權限才能操作您的電腦。' : '权限才能控制您的电脑。');
+        }],
+        [/^Relaunch (.+?) to finish Screen Recording\.$/i, (m, app) => USE_TW ? ('請重新啟動 ' + app + ' 以完成「螢幕錄製」設定。') : ('请重新启动 ' + app + ' 以完成“屏幕录制”设置。')],
+        [/^Stop (\d+) items?\?$/i, (m, n) => USE_TW ? ('確定要停止 ' + n + ' 個項目嗎？') : ('确定要停止 ' + n + ' 个项目吗？')],
+        [/^Show (\d+) more subagents?$/i, (m, n) => USE_TW ? ('顯示另外 ' + n + ' 個子代理') : ('显示另外 ' + n + ' 个子代理')],
+        [/^\+(\d+) more \(Show all\)$/i, (m, n) => USE_TW ? ('另外 +' + n + ' 項（顯示全部）') : ('另外 +' + n + ' 项（显示全部）')],
+        [/^(.+?) needs you to sign in before it can be used\.$/i, (m, name) => name + (USE_TW ? ' 需要您先登入後才能使用。' : ' 需要您先登录后才能使用。')],
+        [/^No messages in last (\d+) steps\s*(?:·|—|,)\s*load (?:more|older)$/i, (m, n) => USE_TW ? ('最近 ' + n + ' 步沒有訊息 · 載入更早訊息') : ('最近 ' + n + ' 步无消息 · 加载更早消息')],
+        [/^No visible messages in last (\d+) steps\. Activate Load older messages to continue\.$/i, (m, n) => USE_TW ? ('最近 ' + n + ' 步沒有可見訊息。請啟用「載入更早的訊息」以繼續。') : ('最近 ' + n + ' 步没有可见消息。请激活“加载更早的消息”以继续。')],
+        [/^File exceeds the (\d+)MB display limit \((\d+)MB\), so it can't be opened or downloaded here\.$/i, (m, lim, sz) => USE_TW ? ('檔案超過 ' + lim + 'MB 顯示上限（' + sz + 'MB），因此無法在此開啟或下載。') : ('文件超过 ' + lim + 'MB 显示上限（' + sz + 'MB），因此无法在此打开或下载。')],
+        [/^File exceeds (\d+) bytes \((\d+) bytes\)$/i, (m, lim, sz) => USE_TW ? ('檔案超過 ' + lim + ' 位元組（' + sz + ' 位元組）') : ('文件超过 ' + lim + ' 字节（' + sz + ' 字节）')],
+        [/^Recording exceeds 15MB limit \((\d+)MB\)$/i, (m, sz) => USE_TW ? ('錄音超過 15MB 上限（' + sz + 'MB）') : ('录音超过 15MB 上限（' + sz + 'MB）')],
+        [/^Total media size exceeds (\d+)MB limit$/i, (m, lim) => USE_TW ? ('媒體總大小超過 ' + lim + 'MB 上限') : ('媒体总大小超过 ' + lim + 'MB 上限')],
+        [/^(.+?)'s server IP address could not be found\.$/i, (m, h) => (USE_TW ? '找不到 ' + h + ' 的伺服器 IP 位址。' : '找不到 ' + h + ' 的服务器 IP 地址。')],
+        [/^(.+?) refused to connect\.$/i, (m, h) => h + (USE_TW ? ' 拒絕連線。' : ' 拒绝连接。')],
+        [/^(.+?) took too long to respond\.$/i, (m, h) => h + (USE_TW ? ' 回應時間過長。' : ' 响应时间过长。')],
+        [/^(.+?) could not find the requested page\.$/i, (m, h) => h + (USE_TW ? ' 找不到所要求的頁面。' : ' 找不到请求的页面。')],
+        [/^(.+?) is currently unable to handle this request\.$/i, (m, h) => h + (USE_TW ? ' 目前無法處理這項要求。' : ' 当前无法处理此请求。')],
+        [/^Check if there is a typo in (.+?), or open the page in your external browser\.$/i, (m, h) => {
+            const hZh = /^the address$/i.test(h.trim()) ? (USE_TW ? '網址' : '地址') : h.trim();
+            return USE_TW ? ('請檢查 ' + hZh + ' 是否有拼字錯誤，或在外部瀏覽器中開啟該頁面。') : ('请检查 ' + hZh + ' 是否有拼写错误，或在外部浏览器中打开该页面。');
+        }],
+        [/^(?:(Open|Reopen)\s+)?(Accessibility|Screen Recording) settings$/i, (m, act, pane) => {
+            const pZh = /^Accessibility/i.test(pane) ? (USE_TW ? '輔助使用' : '辅助功能') : (USE_TW ? '螢幕錄製' : '屏幕录制');
+            if (!act) return pZh + (USE_TW ? '設定' : '设置');
+            return (/^Reopen/i.test(act) ? (USE_TW ? '重新開啟' : '重新打开') : (USE_TW ? '開啟' : '打开')) + pZh + (USE_TW ? '設定' : '设置');
+        }],
+        [/^Deleted cookies for (.+)$/i, (m, site) => USE_TW ? ('已刪除 ' + site + ' 的 Cookie') : ('已删除 ' + site + ' 的 Cookie')],
+        [/^Moved conversation (.+)$/i, (m, target) => (USE_TW ? '已移動對話 ' : '已移动会话 ') + target],
+        [/^Adding plugins from (.+)$/i, (m, src) => (USE_TW ? '正在從 ' : '正在从 ') + src + (USE_TW ? ' 新增外掛程式' : ' 添加插件')],
+        [/^No connectors match "(.+)"$/i, (m, q) => USE_TW ? ('沒有符合「' + q + '」的連接器') : ('没有匹配“' + q + '”的连接器')],
+        [/^View (\d+) help(?: items?)? and (\d+) side questions?$/i, (m, h, s) => USE_TW ? ('檢視 ' + h + ' 項說明與 ' + s + ' 個側邊提問') : ('查看 ' + h + ' 条帮助和 ' + s + ' 个侧边提问')],
+        [/^Work in (.+)$/i, (m, wt) => /^progress$/i.test(wt.trim()) ? m : ((USE_TW ? '在 ' : '在 ') + wt + ' 中工作')],
+        [/^Work locally on (.+)$/i, (m, repos) => (USE_TW ? '在本機處理 ' : '在本地处理 ') + repos],
+        [/^Worktree from (.+)$/i, (m, repos) => (USE_TW ? '建立 Worktree：' : '创建工作树：') + repos],
+        [/^Automatically create a new (.+?) workspace when the conversation starts$/i, (m, vcs) => USE_TW ? ('對話開始時自動建立新的 ' + vcs + ' 工作區') : ('会话开始时自动创建新的 ' + vcs + ' 工作区')],
+        [/^(.+?)\.\s+(Show|Hide)\s+plan$/i, (m, title, verb) => title + '。' + (/^Hide/i.test(verb) ? (USE_TW ? '隱藏計畫' : '隐藏计划') : (USE_TW ? '顯示計畫' : '显示计划'))],
+        [/^Triggered (.+)$/, (m, name) => (USE_TW ? '已觸發 ' : '已触发 ') + name],
+        [/^(.+?) download progress$/i, (m, name) => name + (USE_TW ? ' 下載進度' : ' 下载进度')],
+        [/^(.+?) color picker$/i, (m, name) => name + (USE_TW ? ' 色彩選擇器' : ' 颜色选择器')],
+        [/^Error:\s*(.+)$/, (m, msg) => (USE_TW ? '錯誤：' : '错误：') + msg],
+        [/^(.+?),\s*showing (\d+) of (\d+)$/i, (m, title, b, c) => title + (USE_TW ? ('，目前顯示 ' + b + ' / ' + c + ' 項') : ('，正在显示第 ' + b + ' / ' + c + ' 项'))],
+        [/^(.+?):\s*([\d,]+)\s+tokens$/i, (m, label, num) => (lookupDict(label) || label) + '：' + num + ' Token'],
+        [/^(.+?)\.\s*View site information$/i, (m, summary) => summary + (USE_TW ? '。檢視網站資訊' : '。查看站点信息')],
+        [/^(\d+)\s+days$/i, (m, d) => d + ' 天'],
+        [/^(.+?) annotation on page (\d+)$/i, (m, kind, p) => USE_TW ? ('第 ' + p + ' 頁的 ' + kind + ' 註解') : ('第 ' + p + ' 页的 ' + kind + ' 批注')],
+        [/^Applied\s+(.+)$/i, (m, target) => (USE_TW ? '已套用 ' : '已应用 ') + target],
+        [/^Show\s+(.+?)\s+in the list again$/i, (m, host) => (USE_TW ? '重新在清單中顯示 ' : '重新在列表中显示 ') + host],
+        [/^Hook\s+((?:Json|Command|Prompt|Shell|Script)\s+[A-Za-z0-9_.:-]+|[A-Z][A-Za-z0-9_.:-]*(?:\s+[A-Za-z0-9_.:-]+){0,2})$/, (m, rest) => {
+            if (/^(?:will|with|is|was|has|are|to|for|that|can|may|from|when|if)\b/i.test(rest.trim())) return m;
+            return (USE_TW ? '鉤子 ' : '钩子 ') + rest;
+        }],
+        [/^(?:(·\s*))?Exited with code\s+(-?\d+)$/i, (m, dot, code) => (dot ? '· ' : '') + (USE_TW ? ('已結束，結束碼 ' + code) : ('已退出，退出码 ' + code))],
+        [/^(?:(·\s*))?Exit code\s+(-?\d+)$/i, (m, dot, code) => (dot ? '· ' : '') + (USE_TW ? ('結束碼 ' + code) : ('退出码 ' + code))],
+        [/^(?:(·\s*))?Exited with signal\s+([A-Za-z0-9_+-]+)$/i, (m, dot, sig) => (dot ? '· ' : '') + (USE_TW ? ('已因訊號 ' + sig + ' 結束') : ('已因信号 ' + sig + ' 退出'))],
+        [/^(.+?)\s*·\s*Exited with code\s+(-?\d+)$/i, (m, prefix, code) => {
+            const pNorm = norm(prefix);
+            const pZh = translateExactOrDynamic(pNorm) || prefix;
+            return pZh + (USE_TW ? (' · 已結束，結束碼 ' + code) : (' · 已退出，退出码 ' + code));
+        }],
+        [/^(Running|Ran|Searching|Searched|Analyzing|Analyzed|Reading|Editing|Edited|Writing|Wrote|Creating|Created|Deleting|Deleted|Viewing|Listing|Listed|Checking|Checked|Calling|Called|Invoking|Invoked|Executing|Executed|Fetching|Fetched|Updating|Updated|Waiting for)\s+(.+)$/, (m, verb, rest) => {
+            const restTrim = rest.trim();
+            if (!restTrim || restTrim.length > 100 || /[.!?。！？]$/.test(restTrim)) return m;
+            if (verb === 'Waiting for' && /^you\b/i.test(restTrim)) return m;
+            const verbMap = {
+                Running: ['正在运行', '正在執行'],
+                Ran: ['已运行', '已執行'],
+                Searching: ['正在搜索', '正在搜尋'],
+                Searched: ['已搜索', '已搜尋'],
+                Analyzing: ['正在分析', '正在分析'],
+                Analyzed: ['已分析', '已分析'],
+                Reading: ['正在读取', '正在讀取'],
+                Editing: ['正在编辑', '正在編輯'],
+                Edited: ['已编辑', '已編輯'],
+                Writing: ['正在写入', '正在寫入'],
+                Wrote: ['已写入', '已寫入'],
+                Creating: ['正在创建', '正在建立'],
+                Created: ['已创建', '已建立'],
+                Deleting: ['正在删除', '正在刪除'],
+                Deleted: ['已删除', '已刪除'],
+                Viewing: ['正在查看', '正在檢視'],
+                Listing: ['正在列出', '正在列出'],
+                Listed: ['已列出', '已列出'],
+                Checking: ['正在检查', '正在檢查'],
+                Checked: ['已检查', '已檢查'],
+                Calling: ['正在调用', '正在呼叫'],
+                Called: ['已调用', '已呼叫'],
+                Invoking: ['正在调用', '正在呼叫'],
+                Invoked: ['已调用', '已呼叫'],
+                Executing: ['正在执行', '正在執行'],
+                Executed: ['已执行', '已執行'],
+                Fetching: ['正在获取', '正在擷取'],
+                Fetched: ['已获取', '已擷取'],
+                Updating: ['正在更新', '正在更新'],
+                Updated: ['已更新', '已更新'],
+                'Waiting for': ['正在等待', '正在等待']
+            };
+            const vPair = verbMap[verb];
+            if (!vPair) return m;
+            const formattedRest = restTrim.replace(/(\s+)((?:\d+(?:d|h|m|s)\s*)+)$/i, (_, sp, dur) => {
+                return sp + formatCompactDuration(dur);
+            });
+            return vPair[USE_TW ? 1 : 0] + ' ' + formattedRest;
+        }],
+        [/^Stream and control\s+(.+?)\s+directly in the side pane\.?$/i, (m, name) => USE_TW
+            ? ('直接在側邊面板中串流傳輸與控制 ' + name + '。')
+            : ('直接在侧边面板中流式传输与控制 ' + name + '。')],
+        [/^Applies to \/btw and messages sent after this turn\.?$/i, () => USE_TW ? '適用於 /btw 與本輪之後傳送的訊息' : '适用于 /btw 及本轮之后发送的消息'],
+        [/^Applies to messages sent after this turn\.?$/i, () => USE_TW ? '適用於本輪之後傳送的訊息' : '适用于本轮之后发送的消息'],
+        [/^(\.\.\.\s*)?([\d,]+)\s+more\s+(lines?|characters?|chars?|bytes?|items?),\s*truncated for display\.?$/i, (m, ellipsis, num, unit) => {
+            const uLow = unit.toLowerCase();
+            const uZh = uLow.startsWith('line') ? '行'
+                : (uLow.startsWith('char') ? (USE_TW ? '個字元' : '个字符')
+                : (uLow.startsWith('byte') ? (USE_TW ? '個位元組' : '个字节')
+                : (USE_TW ? '項' : '项')));
+            return (ellipsis ? '... ' : '') + (USE_TW ? ('還有 ' + num + ' ' + uZh + '，已截斷顯示。') : ('还有 ' + num + ' ' + uZh + '，已截断显示。'));
+        }],
+        [/^(\.\.\.\s*)?truncated for display\.?$/i, (m, ellipsis) => (ellipsis ? '... ' : '') + (USE_TW ? '已截斷顯示。' : '已截断显示。')],
 
         // 安全白名单通用动作按钮模板（仅匹配受控 UI 实体名词，防止单字或代码标识符误翻）
         [/^(Add|Cancel|Close|Configure|Connect|Delete|Disconnect|Enable|Install|New|Open|Reconnect|Remove|Restart|Stop|Toggle|View)\s+(?:the\s+)?([a-zA-Z][a-zA-Z ]{1,30})(\??)$/i, (m, verb, noun, qMark) => {
@@ -1223,6 +2079,61 @@
                 }
                 return num + unitStr;
             });
+        }
+        if (valNorm === 'now' && typeof p.closest === 'function' && p.closest('[data-testid="conversation-row-sidebar"], [data-testid="conversation-row-history"]')) {
+            return USE_TW ? '剛剛' : '刚刚';
+        }
+        if (/^(?:\d+(?:d|h|m|s)\s+)+\d+(?:d|h|m|s)$/i.test(valNorm)) {
+            return formatCompactDuration(valNorm);
+        }
+        if (valNorm === 'Hook' && /^Hook\s+(?:Json|Command|Prompt|Shell|Script|SessionStart|SessionEnd|PreToolUse|PostToolUse|PreInvocation|PostInvocation|UserPromptSubmit|SubagentStop|PreCompact)\b/i.test(pText.trim())) {
+            return USE_TW ? '鉤子' : '钩子';
+        }
+        if ((valNorm === 'directly in the side pane.' || valNorm === 'directly in the side pane') && /Stream and control|流式传输与控制|串流傳輸與控制/i.test(pText)) {
+            return '。';
+        }
+        if ((valNorm === 'Type' || valNorm === 'Command') && findSidecarDetailsModal(p)) {
+            return valNorm === 'Type' ? (USE_TW ? '類型' : '类型') : (USE_TW ? '指令' : '命令');
+        }
+        if (/messages sent after this turn|本轮之后发送的消息|本輪之後傳送的訊息/i.test(pText)) {
+            if (valNorm === 'Applies to') return USE_TW ? '適用於 ' : '适用于 ';
+            if (/^and messages sent after this turn\.?$/i.test(valNorm)) {
+                const dot = valNorm.endsWith('.') ? '。' : '';
+                return (USE_TW ? ' 與本輪之後傳送的訊息' : ' 及本轮之后发送的消息') + dot;
+            }
+        }
+        if (/^steps?$/i.test(valNorm)) {
+            const gp = p.parentElement && typeof document !== 'undefined' && p.parentElement !== document.body && p.parentElement !== document.documentElement ? p.parentElement : null;
+            const gpText = gp ? (dfsParentTexts.get(gp) || originalParentTexts.get(gp) || gp.textContent || '') : '';
+            if (/^\d+\s*\/\s*\d+\s*steps?$/i.test(pText.trim()) || (gpText.length < 80 && /^\d+\s*\/\s*\d+\s*steps?$/i.test(gpText.trim()))) {
+                return (originalVal.startsWith(' ') ? ' ' : '') + (USE_TW ? '步驟' : '步骤');
+            }
+        }
+        if (/^more\s+(lines?|characters?|chars?|bytes?|items?),\s*truncated for display\.?$/i.test(valNorm)) {
+            const gp = p.parentElement && typeof document !== 'undefined' && p.parentElement !== document.body && p.parentElement !== document.documentElement ? p.parentElement : null;
+            const gpText = gp ? (dfsParentTexts.get(gp) || originalParentTexts.get(gp) || gp.textContent || '') : '';
+            const ctxText = /\d/.test(pText) ? pText : (gpText.length < 200 ? gpText : '');
+            if (/\d[\d,]*\s+more\s+(?:lines?|characters?|chars?|bytes?|items?),\s*truncated for display/i.test(ctxText)) {
+                const uLow = valNorm.match(/^more\s+(\w+)/i)[1].toLowerCase();
+                const uZh = uLow.startsWith('line') ? '行'
+                    : (uLow.startsWith('char') ? (USE_TW ? '個字元' : '个字符')
+                    : (uLow.startsWith('byte') ? (USE_TW ? '個位元組' : '个字节')
+                    : (USE_TW ? '項' : '项')));
+                return (originalVal.startsWith(' ') ? ' ' : '') + uZh + (USE_TW ? '，已截斷顯示。' : '，已截断显示。');
+            }
+        }
+        const toolLabelZh = lookupToolCallSectionLabel(valNorm);
+        if (toolLabelZh && norm(pText) === valNorm && hasAdjacentCodeBlock(p)) {
+            return toolLabelZh;
+        }
+        if (/^(?:·\s*)?Exited with code$/i.test(valNorm)) {
+            const gp = p.parentElement && typeof document !== 'undefined' && p.parentElement !== document.body && p.parentElement !== document.documentElement ? p.parentElement : null;
+            const gpText = gp ? (dfsParentTexts.get(gp) || originalParentTexts.get(gp) || gp.textContent || '') : '';
+            if (/Exited with code\s+-?\d+/i.test(pText) || (gpText.length < 120 && /Exited with code\s+-?\d+/i.test(gpText))) {
+                const leadDot = valNorm.startsWith('·') ? '· ' : '';
+                const trail = originalVal.endsWith(' ') ? ' ' : '';
+                return leadDot + (USE_TW ? '已結束，結束碼' : '已退出，退出码') + trail;
+            }
         }
         if ((valNorm === 'Card' || valNorm === 'of') && ((typeof p.closest === 'function' && p.closest('[data-testid="card-deck-counter"]')) || (p.getAttribute && p.getAttribute('data-testid') === 'card-deck-counter'))) {
             return valNorm === 'Card' ? "卡片 " : " / ";
@@ -1444,6 +2355,9 @@
             if (valNorm === 'Desktop') return '桌面';
             if (valNorm === 'Grid') return USE_TW ? '網格' : '网格';
         }
+        if ((valNorm === 'thread' || valNorm === 'threads') && typeof p.closest === 'function' && p.closest('.hv-sum')) {
+            return USE_TW ? ' 個討論串' : ' 条工作线';
+        }
         if (valNorm === "Couldn't delete cookies for" && (pText.includes('cookies') || pText.includes('Cookie'))) {
             return USE_TW ? '無法刪除以下網站的 Cookie：' : '无法删除以下网站的 Cookie：';
         }
@@ -1462,11 +2376,13 @@
                 return USE_TW ? '」的網站。' : '”的网站。';
             }
         }
+        // v2.35.1 用独立的 " " 文字节点夹着 <code>antigravity.</code>，译文不再自带空格（否则出现双空格）；
+        // 空格写在同一个文字节点里的旧结构则照原文保留
         if (valNorm === 'Inspect live bindings or record custom key chords filtered to') {
-            return USE_TW ? '檢視即時按鍵繫結或錄製自訂組合鍵，目前篩選範圍為 ' : '查看实时按键绑定或录制自定义组合键，当前筛选范围为 ';
+            return (USE_TW ? '檢視即時按鍵繫結或錄製自訂組合鍵，目前篩選範圍為' : '查看实时按键绑定或录制自定义组合键，当前筛选范围为') + (/\s$/.test(originalVal) ? ' ' : '');
         }
         if (valNorm === 'commands.' && (pText.includes('Inspect live bindings') || pText.includes('实时按键绑定') || pText.includes('即時按鍵繫結') || pText.includes('实时绑定') || pText.includes('即時綁定'))) {
-            return USE_TW ? ' 指令。' : ' 命令。';
+            return (/^\s/.test(originalVal) ? ' ' : '') + (USE_TW ? '指令。' : '命令。');
         }
         if ((valNorm === 'Initialized with' || valNorm === 'Declared by') && p.tagName === 'SPAN' && p.nextElementSibling && p.nextElementSibling.tagName === 'CODE') {
             return valNorm === 'Initialized with'
@@ -1474,7 +2390,12 @@
                 : (USE_TW ? '宣告來源' : '声明来源');
         }
         if (valNorm === 'Messages now send immediately. Configure in') {
-            return USE_TW ? '訊息現已改為立即傳送。可在 ' : '消息现已改为立即发送。可在 ';
+            return USE_TW ? '訊息現已改為立即傳送。可在' : '消息现已改为立即发送。可在';
+        }
+        // 「Configure in <settings>.」的句点与链接同在 whitespace-nowrap 的 span 内
+        const msgHead = p.parentElement && p.parentElement.firstChild;
+        if (valNorm === '.' && msgHead && msgHead.nodeType === Node.TEXT_NODE && /^(?:Messages now send immediately|訊息現已改為立即傳送|消息现已改为立即发送)/.test((msgHead.nodeValue || '').trim())) {
+            return USE_TW ? '中調整。' : '中调整。';
         }
         if (valNorm === 'In System Settings, click') {
             return USE_TW ? '在「系統設定」中，按一下 ' : '在“系统设置”中，点击 ';
@@ -1484,6 +2405,64 @@
         }
         if (valNorm === 'Already on? Select') {
             return USE_TW ? '已經開啟？請選取 ' : '已经开启？请选择 ';
+        }
+        // macOS 权限引导句（电脑操作权限状态栏）：React Fragment 把句子拆成文字节点与 <strong>App</strong>／<strong>+</strong>
+        if (typeof p.getAttribute === 'function' && p.getAttribute('role') === 'status' && /System Settings|系統設定|系统设置/.test(pText)) {
+            const guide = {
+                ". If it isn't in the list, drag it in from the small window next to System Settings.": ['。如果列表中没有，请从“系统设置”旁的小窗口将它拖入。', '。如果清單中沒有，請從「系統設定」旁的小視窗將它拖曳進來。'],
+                ', choose': ['，选择', '，選取'],
+                ', then turn it on.': ['，然后将其开启。', '，然後將它開啟。'],
+                ', click': ['，点击 ', '，按一下 '],
+                ', then': ['，然后', '，然後'],
+                'drag it back in from the small window.': ['从小窗口将它重新拖入。', '從小視窗將它重新拖曳進來。'],
+                'click': ['点击 ', '按一下 '],
+                'and add it again.': [' 重新添加。', ' 重新加入。']
+            };
+            if (Object.prototype.hasOwnProperty.call(guide, valNorm)) return guide[valNorm][USE_TW ? 1 : 0];
+        }
+        // 自动化排程摘要：<b>Weekly</b> on <b>Monday</b> around <b>9:00 AM</b>
+        if ((valNorm === 'around' || valNorm === 'on') && typeof p.querySelector === 'function' && p.querySelector('.font-semibold') &&
+            /^(?:Daily|Weekdays|Weekly|每天|平日|工作日|每週|每周)/.test(pText.trim())) {
+            return valNorm === 'around' ? (USE_TW ? '約' : '约') : '';
+        }
+        // 声明权限说明句结尾：「…which you can change anytime in the <project> settings page.」
+        if (valNorm === 'settings page.' && /its own permissions|獨立權限|独立权限/.test(pText)) {
+            return USE_TW ? '設定頁面中變更。' : '设置页面中更改。';
+        }
+        // 插件详情页找不到项目：「No plugin found for <code>id</code>.」（前半句由词典翻译）
+        if (valNorm === '.' && typeof p.querySelector === 'function' && p.querySelector('.font-mono') &&
+            /^(?:No (?:app|plugin|bundle) found for|找不到(?:應用程式|外掛程式)|未找到(?:应用|插件))/.test(pText.trim())) {
+            return '。';
+        }
+        // 运行中项目批量选择栏：「3 selected」
+        if (valNorm === 'selected' && typeof p.closest === 'function' && p.closest('[data-testid="running-selection-bar"]')) {
+            return USE_TW ? ' 項已選取' : ' 项已选中';
+        }
+        if (valNorm === 'FAQ' && p.tagName === 'A' && p.parentElement && (dfsParentTexts.get(p.parentElement) || originalParentTexts.get(p.parentElement) || p.parentElement.textContent || '').match(/visiting our|造訪我們的|访问我们的|了解更多请访问|請造訪/)) {
+            return USE_TW ? '常見問題' : '常见问题';
+        }
+        if ((valNorm === 'In this case,' || valNorm === 'chunks were collapsed into one. Chunks included in this read:') && pText.includes('chunks were collapsed into one')) {
+            return valNorm === 'In this case,'
+                ? (USE_TW ? '在此情況下，已將 ' : '在此情况下，已将 ')
+                : (USE_TW ? ' 個區塊合併為單一區塊。此次讀取包含的區塊：' : ' 个区块合并为单个区块。此次读取包含的区块：');
+        }
+        if (valNorm === 'Start Best-of-' && /^Start Best-of-\d+$/i.test(pText.trim())) {
+            return USE_TW ? '啟動 Best-of-' : '启动 Best-of-';
+        }
+        if (valNorm === 'Generation Steps (' && /^Generation Steps \(\d+\)$/.test(pText.trim())) {
+            return USE_TW ? '產生步驟 (' : '生成步骤 (';
+        }
+        if ((valNorm === 'Show more (' && /^Show more \(\d+\)$/.test(pText.trim())) || (valNorm === 'Show submitted (' && /^Show submitted \(\d+\)$/.test(pText.trim()))) {
+            return valNorm === 'Show more ('
+                ? (USE_TW ? '顯示更多 (' : '显示更多 (')
+                : (USE_TW ? '顯示已提交 (' : '显示已提交 (');
+        }
+        if (pText.includes('No MCP servers found for "') || pText.includes('未找到与“') || pText.includes('找不到與「')) {
+            if (valNorm === 'No MCP servers found for "') return USE_TW ? '找不到與「' : '未找到与“';
+            if (valNorm === '"') return USE_TW ? '」相符的 MCP 伺服器' : '”匹配的 MCP 服务器';
+        }
+        if (valNorm === 'If that machine is a cloudtop, reach it via') {
+            return USE_TW ? '如果該機器是 Cloudtop，請透過以下方式連線：' : '如果该机器是 Cloudtop，请通过以下方式访问：';
         }
         return null;
     }
@@ -1517,6 +2496,186 @@
         'Indigo': ['靛蓝色', '靛藍色']
     };
 
+    const protectedPluginNames = new WeakMap();
+    const PLUGIN_UI_CHROME_SET = new Set([
+        'install', 'uninstall', 'enable', 'disable', 'configure', 'settings', 'remove', 'update',
+        'details', 'more', 'open marketplace', 'marketplace', 'plugins', 'plugin', 'see more',
+        'see less', 'show more', 'show less', 'active', 'disabled', 'installed', 'running',
+        'stopped', 'connected', 'not connected', 'sign in', 'sign out', 'authentication required',
+        'plugin permissions', 'plugins options', 'no plugins available', 'no plugins installed',
+        'add', 'cancel', 'close', 'open', 'refresh', 'retry', 'try again', 'manage', 'back',
+        'delete', 'edit', 'search', 'filter', 'loading...', 'show all', 'see all',
+        'side pane ui available', 'recent events', 'full logs', 'host endpoint', 'uptime',
+        'status', 'type', 'command', 'restart', 'open in side pane', 'managed by plugin'
+    ]);
+    const BUILTIN_AUX_TABS = new Set([
+        'review', 'files', 'terminal', 'browser', 'changes', 'diff', 'preview', 'editor',
+        'artifacts', 'problems', 'output', 'console', 'logs', 'timeline', 'inspector',
+        'search', 'plan', 'swarm', 'overview', 'board', 'members', 'graph', 'raw', 'hive',
+        'open file', 'side question', 'side questions', 'skills used'
+    ]);
+
+    function findSidecarDetailsModal(el) {
+        const startEl = el && el.nodeType === Node.ELEMENT_NODE ? el : (el && el.parentElement) || null;
+        if (!startEl) return null;
+        const hasSidecarMarkers = (node) => {
+            const txt = node.textContent || '';
+            return txt.length > 0 && txt.length < 4000 && (
+                txt.includes('Side Pane UI Available') ||
+                txt.includes('侧边面板界面可用') ||
+                txt.includes('側邊面板介面可用') ||
+                txt.includes('Host Endpoint') ||
+                txt.includes('主机端点') ||
+                txt.includes('主機端點') ||
+                txt.includes('Managed by plugin') ||
+                txt.includes('由插件管理') ||
+                txt.includes('由外掛程式管理')
+            );
+        };
+        const dialog = typeof startEl.closest === 'function' ? startEl.closest('[role="dialog"], [aria-modal="true"]') : null;
+        if (dialog) {
+            return hasSidecarMarkers(dialog) ? dialog : null;
+        }
+        let cur = startEl;
+        for (let depth = 0; cur && depth < 10 && typeof document !== 'undefined' && cur !== document.body && cur !== document.documentElement; depth++, cur = cur.parentElement) {
+            if (typeof cur.querySelector === 'function' && cur.querySelector('[role="dialog"], [aria-modal="true"]')) {
+                return null;
+            }
+            if (hasSidecarMarkers(cur)) {
+                return cur;
+            }
+        }
+        return null;
+    }
+
+    function recordProtectedPluginName(el, name) {
+        if (!el || !name) return;
+        const clean = norm(name);
+        if (!clean) return;
+        let set = protectedPluginNames.get(el);
+        if (!set) {
+            set = new Set();
+            protectedPluginNames.set(el, set);
+        }
+        set.add(clean.toLowerCase());
+    }
+
+    function isSlashCommandNameNode(node, valNorm) {
+        if (!valNorm || valNorm.includes(' ')) return false;
+        if (/^\/[a-zA-Z0-9][a-zA-Z0-9_.:/-]*$/.test(valNorm)) return true;
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9_.:-]*$/.test(valNorm)) return false;
+        const prevText = node && node.previousSibling ? norm(node.previousSibling.textContent || '') : '';
+        if (prevText === '/' || prevText.endsWith('/')) return true;
+        const el = node && node.parentElement ? node.parentElement : null;
+        if (!el) return false;
+        if (el.previousElementSibling && norm(el.previousElementSibling.textContent || '').endsWith('/')) {
+            return true;
+        }
+        const item = typeof el.closest === 'function'
+            ? el.closest('[role="option"], [role="menuitem"], [cmdk-item], [data-testid*="slash"], [data-testid*="command-menu"], [data-testid*="action-menu"]')
+            : null;
+        if (item && valNorm === valNorm.toLowerCase()) {
+            const hasSiblingDesc = Boolean(
+                (el.nextElementSibling && norm(el.nextElementSibling.textContent || '')) ||
+                (el.parentElement && el.parentElement !== item && el.parentElement.nextElementSibling && norm(el.parentElement.nextElementSibling.textContent || ''))
+            );
+            const itemText = norm(item.textContent || '');
+            if (hasSiblingDesc || itemText.startsWith('/' + valNorm)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isSidebarPluginNameNode(node, valNorm) {
+        if (!valNorm || valNorm.length > 48 || /[.!?。！？]$/.test(valNorm)) return false;
+        const low = valNorm.toLowerCase();
+        if (PLUGIN_UI_CHROME_SET.has(low)) return false;
+        const el = node && node.parentElement ? node.parentElement : null;
+        if (el && typeof document !== 'undefined' && el !== document.body && el !== document.documentElement) {
+            const tabEl = typeof el.closest === 'function'
+                ? el.closest('[role="tab"], [data-testid*="plugin-tab"], [data-testid*="sidecar-tab"]')
+                : null;
+            if (tabEl) {
+                const tabBar = typeof tabEl.closest === 'function' ? (tabEl.closest('[role="tablist"]') || tabEl.parentElement) : tabEl.parentElement;
+                let hasSidecarSibling = typeof tabEl.matches === 'function' && tabEl.matches('[data-testid*="plugin"], [data-testid*="sidecar"], [data-plugin-id]');
+                if (!hasSidecarSibling && tabBar) {
+                    const barText = norm(tabBar.textContent || '');
+                    const hasMultipleTabs = (tabBar.children && tabBar.children.length > 1) || (tabBar.childNodes && tabBar.childNodes.length > 1);
+                    if (hasMultipleTabs && /(?:Review|评审|評審|審查)/.test(barText)) {
+                        hasSidecarSibling = true;
+                    } else {
+                        let anc = tabBar.parentElement;
+                        for (let d = 0; anc && d < 4 && anc !== document.body && anc !== document.documentElement; d++, anc = anc.parentElement) {
+                            if (typeof anc.querySelector === 'function' && anc.querySelector('iframe[data-testid="sidecar-iframe"]')) {
+                                hasSidecarSibling = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (hasSidecarSibling && !BUILTIN_AUX_TABS.has(low)) {
+                    return true;
+                }
+            }
+            const pText = dfsParentTexts.get(el) || originalParentTexts.get(el) || el.textContent || '';
+            const gp = el.parentElement && el.parentElement !== document.body && el.parentElement !== document.documentElement ? el.parentElement : null;
+            const gpText = gp ? (dfsParentTexts.get(gp) || originalParentTexts.get(gp) || gp.textContent || '') : '';
+            const sentText = (pText.length < 300 ? pText : '') + '\n' + (gpText.length < 300 ? gpText : '');
+            if (/Stream and control|流式传输与控制|串流傳輸與控制/i.test(sentText) && /directly in the side pane|直接在侧边面板中|直接在側邊面板中/i.test(sentText)) {
+                if (low !== 'stream and control' && !low.startsWith('directly in the side pane') && !valNorm.includes('流式传输与控制') && !valNorm.includes('串流傳輸與控制')) {
+                    return true;
+                }
+            }
+            const modal = findSidecarDetailsModal(el);
+            if (modal) {
+                const mSet = protectedPluginNames.get(modal);
+                if (mSet && mSet.has(low)) return true;
+                if (!el.closest || !el.closest('button')) {
+                    const isHeading = typeof el.matches === 'function' && el.matches('h1, h2, h3, h4, [role="heading"]');
+                    let hasHeaderContext = isHeading;
+                    if (!hasHeaderContext) {
+                        let blk = el.parentElement;
+                        for (let d = 0; blk && blk !== modal && d < 3; d++, blk = blk.parentElement) {
+                            const bTxt = blk.textContent || '';
+                            if (bTxt.length < 180 && (/(?:Running|Stopped)(?=\s|$)|运行中|已停止|執行中/.test(bTxt) || /[a-z0-9._-]+\/[a-z0-9._-]+/i.test(bTxt))) {
+                                if (!/[a-z0-9._-]+\/[a-z0-9._-]+/i.test(valNorm)) {
+                                    hasHeaderContext = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (hasHeaderContext) {
+                        recordProtectedPluginName(modal, valNorm);
+                        return true;
+                    }
+                }
+            }
+        }
+        let cur = el;
+        for (let depth = 0; cur && depth < 6; depth++, cur = cur.parentElement) {
+            const pSet = protectedPluginNames.get(cur);
+            if (pSet && pSet.has(low)) return true;
+            if (typeof cur.matches === 'function' && cur.matches('[data-plugin-id], [data-plugin-name], [data-testid*="sidebar-plugin"], [data-testid*="plugin-sidebar"], [data-testid*="plugin-nav"], [data-testid*="plugin-tab"], [data-testid*="plugin-name"], [data-testid*="plugin-title"]')) {
+                return true;
+            }
+            if (typeof cur.matches === 'function' && cur.matches('section, div, ul') && typeof cur.closest === 'function' && cur.closest('nav, aside, [role="navigation"], [data-testid*="sidebar"]')) {
+                const headings = cur.querySelectorAll ? cur.querySelectorAll(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > [role="heading"]') : [];
+                if (headings.length === 1) {
+                    const hdr = headings[0];
+                    if (hdr !== el && !hdr.contains(node)) {
+                        const hdrText = norm(hdr.textContent || '');
+                        if (hdrText === 'Plugins' || hdrText === '插件' || hdrText === '外掛程式') {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     function translateElementAttributes(node) {
         if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
         const tag = node.tagName.toUpperCase();
@@ -1527,6 +2686,12 @@
             const v = node.getAttribute(attr);
             if (v) {
                 const t = norm(v);
+                if (attr === 'aria-label' || attr === 'title') {
+                    const plugMatch = t.match(/^(?:Open the\s+(.+?)\s+plugin|App view for\s+(.+)|Managed by the\s+(.+?)\s+plugin)$/i);
+                    if (plugMatch) {
+                        recordProtectedPluginName(node, plugMatch[1] || plugMatch[2] || plugMatch[3]);
+                    }
+                }
                 let newAttr = translatePermissionChoice(v);
                 if (!newAttr && inSwarmEl && Object.prototype.hasOwnProperty.call(SCOPED_SWARM_MAP, t)) {
                     newAttr = SCOPED_SWARM_MAP[t][USE_TW ? 1 : 0];
@@ -1547,10 +2712,24 @@
                 if (!newAttr) {
                     if (isFilePathOrUri(t)) continue;
                     newAttr = translateExactOrDynamic(t);
+                    if (!newAttr) {
+                        const showMatch = t.match(/^Show\s+(.+)$/i);
+                        if (showMatch) {
+                            const target = showMatch[1].trim();
+                            const inSidebarOrPlugin = Boolean(typeof node.closest === 'function' && node.closest('[data-plugin-id], [data-plugin-name], [data-testid*="plugin"], nav, aside, [role="navigation"], [data-testid*="sidebar"]'));
+                            if (inSidebarOrPlugin && !PLUGIN_UI_CHROME_SET.has(target.toLowerCase())) {
+                                recordProtectedPluginName(node, target);
+                                newAttr = (USE_TW ? '顯示 ' : '显示 ') + target;
+                            } else {
+                                newAttr = (USE_TW ? '顯示 ' : '显示 ') + (lookupDict(target) || target);
+                            }
+                        }
+                    }
                 }
                 if (!newAttr && inSwarmEl) {
                     newAttr = translateSwarmComposite(v);
                 }
+                newAttr = keepSourceEllipsis(v, newAttr);
                 if (newAttr && newAttr !== v) {
                     node.setAttribute(attr, newAttr);
                     if (attr === 'placeholder' && 'placeholder' in node && node.placeholder !== newAttr) {
@@ -1586,9 +2765,242 @@
         return replaced ? out + text.slice(pos) : null;
     }
 
+    // React 会把相邻字符串之间的 " " 拆成独立文字节点；两侧都是中文、且至少一侧是这里翻译出来的中文时，
+    // 收掉这个空白（中文字之间不留空格）；两侧原本就是中文（例如用户内容）时不动。收合可逆：React 之后
+    // 重用两侧节点换成英文时还原空白。判断只读目前的 DOM、不在判断时翻译邻近节点；邻近节点翻完后，
+    // 由父元素走访结束、节点添加或删除、文字变动时重新判断。
+    const CJK_TAIL = /[\u3400-\u9fff\u3000-\u303f\uff00-\uffef]$/;
+    const CJK_HEAD = /^[\u3400-\u9fff\u3000-\u303f\uff00-\uffef]/;
+    const collapsedGaps = new WeakMap();
+    // 邻近节点靠空白那一侧的文字节点：元素只往下找行内小元素（每层至多两个子元素、最多 GAP_EDGE_DEPTH 层），
+    // 不读大型容器的 textContent；超出范围时回传 GAP_UNKNOWN（不收合）。refreshGapsAround 往上找同样的层数，范围一致
+    const GAP_EDGE_DEPTH = 4;
+    // 跳过占位节点（注解、空文字）的上限：超过时视为无法判断，不收合，避免大量空节点让每次变动都扫一长串
+    const GAP_FILLER_MAX = 4;
+    const GAP_UNKNOWN = {};
+    function gapEdgeTextNode(n, fromEnd, depth = 0) {
+        if (!n || n.nodeType === Node.COMMENT_NODE) return null;
+        if (n.nodeType === Node.TEXT_NODE) return n.nodeValue ? n : null;
+        if (n.nodeType !== Node.ELEMENT_NODE || depth >= GAP_EDGE_DEPTH || n.childElementCount > 2) return GAP_UNKNOWN;
+        const kids = n.childNodes;
+        const limit = Math.min(kids.length, GAP_FILLER_MAX + 1);
+        for (let k = 0; k < limit; k++) {
+            const found = gapEdgeTextNode(kids[fromEnd ? kids.length - 1 - k : k], fromEnd, depth + 1);
+            if (found) return found;
+        }
+        return kids.length > limit ? GAP_UNKNOWN : null;
+    }
+    // 注解与空文字节点是 React 的占位，不算邻居；收合过的空白不算占位，它本身要重新判断
+    function isGapFiller(n) {
+        return !!n && (n.nodeType === Node.COMMENT_NODE || (n.nodeType === Node.TEXT_NODE && !n.nodeValue && !collapsedGaps.has(n)));
+    }
+    // 往 dir 方向跳过占位节点，回传第一个实际邻居（超过 GAP_FILLER_MAX 个占位时为 GAP_UNKNOWN），
+    // 以及是否跳过了空文字节点。收合判断、前后空白与变动后的重新判断都用这一个，两个方向的规则一致
+    function gapNeighbor(n, dir) {
+        let s = n[dir];
+        let skippedText = false;
+        for (let i = 0; isGapFiller(s); i++) {
+            if (i >= GAP_FILLER_MAX) return { node: GAP_UNKNOWN, skippedText };
+            if (s.nodeType === Node.TEXT_NODE) skippedText = true;
+            s = s[dir];
+        }
+        return { node: s, skippedText };
+    }
+    function isCjkGap(n) {
+        return !!n && n.nodeType === Node.TEXT_NODE && (n.nodeValue === ' ' || (n.nodeValue === '' && collapsedGaps.has(n)));
+    }
+    // 这段文字是本套件写进去的译文，而且之后没被 React 改过（React 改写时，文字节点分支会先清掉旧纪录）
+    function isOwnTranslation(n) {
+        return translatedValues.has(n) && translatedValues.get(n) === n.nodeValue;
+    }
+    function cjkGapShouldCollapse(gap) {
+        const p = gapNeighbor(gap, 'previousSibling');
+        const q = gapNeighbor(gap, 'nextSibling');
+        const prev = p.node;
+        const next = q.node;
+        if (!prev || !next || prev === GAP_UNKNOWN || next === GAP_UNKNOWN) return false;
+        // 两侧都是元素（例如并排的两个链接或按钮）时，这个空白是分隔用的，保留
+        if (!p.skippedText && !q.skippedText && prev.nodeType !== Node.TEXT_NODE && next.nodeType !== Node.TEXT_NODE) return false;
+        const before = gapEdgeTextNode(prev, true);
+        const after = gapEdgeTextNode(next, false);
+        if (!before || !after || before === GAP_UNKNOWN || after === GAP_UNKNOWN) return false;
+        if (!CJK_TAIL.test(before.nodeValue) || !CJK_HEAD.test(after.nodeValue)) return false;
+        return isOwnTranslation(before) || isOwnTranslation(after);
+    }
+    function refreshCjkGap(gap) {
+        // 编辑区与代码区的内容属于用户：事后才变成可编辑的段落也不再改动
+        if (isCodeOrEditor(gap)) return;
+        if (cjkGapShouldCollapse(gap)) {
+            if (gap.nodeValue) {
+                collapsedGaps.set(gap, gap.nodeValue);
+                translatedValues.set(gap, '');
+                gap.nodeValue = '';
+            }
+        } else if (!gap.nodeValue && collapsedGaps.has(gap)) {
+            const original = collapsedGaps.get(gap);
+            collapsedGaps.delete(gap);
+            translatedValues.delete(gap);
+            gap.nodeValue = original;
+        }
+    }
+    function refreshNeighborSpacing(n, dir) {
+        const s = gapNeighbor(n, dir).node;
+        if (!s || s === GAP_UNKNOWN) return;
+        if (isCjkGap(s)) refreshCjkGap(s);
+        else if (edgeSpacedBase.has(s)) refreshEdgeSpaces(s);
+    }
+    // 节点添加或文字变动后，重新判断它两侧的空白，再往上 GAP_EDGE_DEPTH 层判断各层祖先两侧的空白。
+    // 不因祖先的子元素变多就提早停下：祖先刚多了子元素时，原本依它收合的空白要还原
+    function refreshGapsAround(node) {
+        let n = node;
+        for (let depth = 0; n && depth <= GAP_EDGE_DEPTH; depth++) {
+            refreshNeighborSpacing(n, 'previousSibling');
+            refreshNeighborSpacing(n, 'nextSibling');
+            n = n.parentElement;
+        }
+    }
+    // 只删除节点时 addedNodes 是空的：重新判断删除位置两侧的空白
+    function refreshGapsAtRemoval(m) {
+        for (const s of [m.previousSibling, m.nextSibling]) {
+            if (!s) continue;
+            if (isCjkGap(s)) {
+                refreshCjkGap(s);
+            } else {
+                if (edgeSpacedBase.has(s)) refreshEdgeSpaces(s);
+                refreshGapsAround(s);
+            }
+        }
+        refreshGapsAround(m.target);
+    }
+    // norm() 会先把「…」换成「...」再查词典与规则；原文只用「…」时，译文里的「...」都换回「…」
+    // （规则调整语序后，原文结尾的「…」可能落在译文中间，例如「{1} 的标签」）
+    function keepSourceEllipsis(source, out) {
+        if (typeof out !== 'string' || typeof source !== 'string' || !source.includes('…')) return out;
+        if (!source.includes('...')) return out.replace(/\.\.\./g, '…');
+        return /…\s*$/.test(source) ? out.replace(/\.\.\.(\s*)$/, '…$1') : out;
+    }
+    // 译文片段自带的前后半角空白是替英文名称与数字留的（「由 Foo 创建」）；紧邻的文字是中文时拿掉
+    // （「由我的插件创建」，中文字之间不留空格）。原始译文记在 edgeSpacedBase，邻近内容改变时依目前的 DOM 重新判断，
+    // 找邻近文字的范围与空白收合相同（gapEdgeTextNode）
+    const edgeSpacedBase = new WeakMap();
+    function adjacentEdgeText(node, dir) {
+        const s = gapNeighbor(node, dir).node;
+        if (!s || s === GAP_UNKNOWN) return null;
+        const edge = gapEdgeTextNode(s, dir === 'previousSibling');
+        return edge && edge !== GAP_UNKNOWN ? edge.nodeValue : null;
+    }
+    // 只拿掉两侧都是中文的空白：译文靠空白那一侧是英文、数字或符号时保留（「遵守 Google 隐私权政策」「设置 - 一般」）
+    function adaptEdgeSpaces(node, base) {
+        let out = base;
+        if (out.length > 1 && out.charAt(0) === ' ' && CJK_HEAD.test(out.slice(1))) {
+            const before = adjacentEdgeText(node, 'previousSibling');
+            if (before && CJK_TAIL.test(before)) out = out.slice(1);
+        }
+        if (out.length > 1 && out.charAt(out.length - 1) === ' ' && CJK_TAIL.test(out.slice(0, -1))) {
+            const after = adjacentEdgeText(node, 'nextSibling');
+            if (after && CJK_HEAD.test(after)) out = out.slice(0, -1);
+        }
+        return out;
+    }
+    function refreshEdgeSpaces(node) {
+        const base = edgeSpacedBase.get(node);
+        if (!base || translatedValues.get(node) !== node.nodeValue || isCodeOrEditor(node)) return;
+        const out = adaptEdgeSpaces(node, base);
+        if (out !== node.nodeValue) {
+            translatedValues.set(node, out);
+            node.nodeValue = out;
+        }
+    }
+
+    function isIconFallbackSvg(n) {
+        return !!n && n.nodeType === Node.ELEMENT_NODE && typeof n.hasAttribute === 'function' && n.hasAttribute('data-ag-icon-fallback');
+    }
+    // 补画的 SVG 跟着宿主的无障碍设置：宿主已隐藏或另有名称时隐藏 SVG；否则由 SVG 带着图标名称
+    // （字体图标的名称文字原本就是无障碍名称的一部分，文字清空后改由 SVG 提供）
+    function syncIconFallbackA11y(host, svg) {
+        if (host.getAttribute('aria-hidden') === 'true' || host.hasAttribute('aria-label') || host.hasAttribute('aria-labelledby')) {
+            if (svg.getAttribute('aria-hidden') !== 'true') svg.setAttribute('aria-hidden', 'true');
+            svg.removeAttribute('role');
+            svg.removeAttribute('aria-label');
+        } else {
+            svg.removeAttribute('aria-hidden');
+            if (svg.getAttribute('role') !== 'img') svg.setAttribute('role', 'img');
+            if (!svg.hasAttribute('aria-label')) svg.setAttribute('aria-label', svg.getAttribute('data-ag-icon-fallback'));
+        }
+    }
+    // 字体图标（ligature）文字：Antigravity 2.35.1 未加载 Google Symbols 字体，内置 SVG 表缺少的图标会以图标名称纯文字显示。
+    // 已知缺口改画 SVG 并清空文字，其余图标名称一律不翻译，避免 "comment" 之类被字典译成中文（保留 React 的文字节点，避免遍历失同步）。
+    // 文字清空或改成空白时也在这里处理，才不会被后面的空白与缓存判断提早挡下而留着旧 SVG。回传 true 表示已处理完
+    function handleIconFontText(node, originalVal) {
+        const parent = node.parentElement;
+        const iconHost = parent && typeof parent.matches === 'function' && parent.matches(ICON_FONT_SELECTOR) ? parent : null;
+        if (!iconHost) {
+            // React 重用图标的文字节点并拿掉图标 class 后改了文字：移除先前补画在它前面的 SVG
+            if (isIconFallbackSvg(node.previousSibling)) node.previousSibling.remove();
+            return false;
+        }
+        const oldSvg = Array.from(iconHost.children).find(isIconFallbackSvg) || null;
+        // 本套件清空的文字（SVG 还在）：维持现状
+        if (originalVal === '' && oldSvg && translatedValues.get(node) === '') return true;
+        const valNorm = norm(originalVal || '');
+        if (oldSvg && oldSvg.getAttribute('data-ag-icon-fallback') !== valNorm) oldSvg.remove();
+        const paths = valNorm && Object.prototype.hasOwnProperty.call(ICON_FONT_FALLBACK_PATHS, valNorm) ? ICON_FONT_FALLBACK_PATHS[valNorm] : null;
+        if (!paths || typeof document === 'undefined' || typeof document.createElementNS !== 'function') {
+            if (originalVal) unchangedTextValues.set(node, originalVal);
+            return true;
+        }
+        if (!oldSvg || oldSvg.getAttribute('data-ag-icon-fallback') !== valNorm) {
+            const svgNs = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNs, 'svg');
+            svg.setAttribute('data-ag-icon-fallback', valNorm);
+            // 1em 跟随图标宿主的字级（px、rem 或继承值都适用），与字体图标原本的大小一致
+            svg.setAttribute('width', '1em');
+            svg.setAttribute('height', '1em');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '2');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+            svg.setAttribute('class', 'shrink-0');
+            svg.setAttribute('style', 'display:inline-block;vertical-align:middle');
+            syncIconFallbackA11y(iconHost, svg);
+            for (const d of paths) {
+                const pSvg = document.createElementNS(svgNs, 'path');
+                pSvg.setAttribute('d', d);
+                svg.appendChild(pSvg);
+            }
+            iconHost.insertBefore(svg, node);
+        }
+        // 同一文字节点之后换回不需 SVG 的图标名称时，不能被「未翻译」缓存提早挡下而留着旧 SVG
+        unchangedTextValues.delete(node);
+        translatedValues.set(node, '');
+        node.nodeValue = '';
+        return true;
+    }
+
+    // 拆段句子里由用户命名的字段（自动化、插件名称）：依前后片段辨认，片段可能已翻译，也可能还是原文
+    const USER_NAME_SLOTS = [['Agents created by', 'run in a dedicated']];
+    function isFragmentNode(n, source) {
+        if (!n || n === GAP_UNKNOWN || n.nodeType !== Node.TEXT_NODE || !n.nodeValue) return false;
+        // 片段原文与译文都很短：邻居是一长段文字时不必范式比对
+        if (n.nodeValue.length > 64) return false;
+        const v = norm(n.nodeValue);
+        if (v === source) return true;
+        const tr = map.get(source);
+        return typeof tr === 'string' && v === norm(tr);
+    }
+    function isUserNameSlot(node) {
+        const prev = gapNeighbor(node, 'previousSibling').node;
+        if (!prev || prev === GAP_UNKNOWN || prev.nodeType !== Node.TEXT_NODE) return false;
+        const next = gapNeighbor(node, 'nextSibling').node;
+        return USER_NAME_SLOTS.some(([before, after]) => isFragmentNode(prev, before) && isFragmentNode(next, after));
+    }
+
     function translateNode(node) {
         try {
             if (!node) return;
+            if (isSubframeWindow() && !isBuiltInSidecarDocument()) return;
 
             if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
                 if (node.host && isCodeOrEditor(node.host)) return;
@@ -1604,7 +3016,10 @@
 
                 if (tag === 'INPUT' || tag === 'TEXTAREA') return;
                 if (tag === 'OPTION' && !node.hasAttribute('value')) return;
-                if (isCodeOrEditor(node) || node.isContentEditable) return;
+                if (isCodeOrEditor(node) || node.isContentEditable) {
+                    if (!node.isContentEditable) translateIsolatedToolCallChrome(node);
+                    return;
+                }
                 if (node.classList && (node.classList.contains('monaco-editor') || node.classList.contains('terminal') || node.classList.contains('xterm'))) return;
 
                 // 处理 FastPick / 列表底部的 "Show <N> more..." 复合节点
@@ -1617,15 +3032,15 @@
                             if (v === 'Show ' || norm(v) === 'Show') {
                                 tc.nodeValue = USE_TW ? '顯示另外 ' : '显示另外 ';
                                 translatedValues.set(tc, tc.nodeValue);
-                            } else if (v === ' more...' || v === ' more…' || norm(v) === 'more...') {
-                                tc.nodeValue = USE_TW ? ' 個...' : ' 个...';
+                            } else if (/^more(\.\.\.|…)?$/i.test(v.trim())) {
+                                tc.nodeValue = (USE_TW ? ' 個' : ' 个') + (v.trim().match(/^more(\.\.\.|…)?$/i)[1] || '');
                                 translatedValues.set(tc, tc.nodeValue);
                             }
                         }
                     } else if (textChildren.length === 1 && node.childNodes.length === 1) {
-                        const m = elText.match(/^Show\s+(\d+)\s+more(?:\.\.\.|…)?$/i);
+                        const m = elText.match(/^Show\s+(\d+)\s+more(\.\.\.|…)?$/i);
                         if (m) {
-                            textChildren[0].nodeValue = USE_TW ? ('顯示另外 ' + m[1] + ' 個...') : ('显示另外 ' + m[1] + ' 个...');
+                            textChildren[0].nodeValue = (USE_TW ? ('顯示另外 ' + m[1] + ' 個') : ('显示另外 ' + m[1] + ' 个')) + (m[2] || '');
                             translatedValues.set(textChildren[0], textChildren[0].nodeValue);
                         }
                     }
@@ -1680,6 +3095,55 @@
                     }
                 }
 
+                // 處理 "Available for <projectId> project" 拆分文本節點
+                if (/^Available for\s+.+?\s+project$/i.test(elText)) {
+                    const textChildren = Array.from(node.childNodes).filter(c => c.nodeType === Node.TEXT_NODE);
+                    for (const tc of textChildren) {
+                        const n = norm(tc.nodeValue);
+                        if (n === 'Available for') {
+                            tc.nodeValue = USE_TW ? '適用於 ' : '适用于 ';
+                            translatedValues.set(tc, tc.nodeValue);
+                        } else if (n === 'project') {
+                            tc.nodeValue = USE_TW ? ' 專案' : ' 项目';
+                            translatedValues.set(tc, tc.nodeValue);
+                        }
+                    }
+                }
+
+                // 处理插件侧边面板介绍 "Stream and control <pluginName> directly in the side pane."
+                if (/^(?:Stream and control|流式传输与控制|串流傳輸與控制)\s+.+?\s+directly in the side pane\.?$/i.test(elText)) {
+                    const modal = findSidecarDetailsModal(node);
+                    for (const c of Array.from(node.childNodes)) {
+                        if (c.nodeType === Node.TEXT_NODE) {
+                            const n = norm(c.nodeValue);
+                            if (/^(?:Stream and control|流式传输与控制|串流傳輸與控制)$/i.test(n)) {
+                                c.nodeValue = USE_TW ? '直接在側邊面板中串流傳輸與控制 ' : '直接在侧边面板中流式传输与控制 ';
+                                translatedValues.set(c, c.nodeValue);
+                            } else if (/^directly in the side pane\.?$/i.test(n)) {
+                                c.nodeValue = '。';
+                                translatedValues.set(c, c.nodeValue);
+                            } else if (n) {
+                                recordProtectedPluginName(node, n);
+                                if (modal) recordProtectedPluginName(modal, n);
+                            }
+                        } else if (c.nodeType === Node.ELEMENT_NODE) {
+                            const cname = norm(c.textContent || '');
+                            if (cname) {
+                                recordProtectedPluginName(node, cname);
+                                if (modal) recordProtectedPluginName(modal, cname);
+                            }
+                        }
+                    }
+                }
+
+                const elChildrenCount = node.children ? node.children.length : Array.from(node.childNodes || []).filter(c => c.nodeType === Node.ELEMENT_NODE).length;
+                if (elChildrenCount === 0 && node.childNodes.length > 1) {
+                    const truncZh = translateTruncatedNotice(norm(elText));
+                    if (truncZh && replaceElementTextNodes(node, truncZh)) {
+                        return;
+                    }
+                }
+
                 if (node.shadowRoot) {
                     observeRoot(node.shadowRoot);
                     translateNode(node.shadowRoot);
@@ -1694,14 +3158,37 @@
                 }
                 try {
                     for (const child of node.childNodes) translateNode(child);
+                    // 子节点都翻完后再判断其间的空白：遍历到空白时，它后面的节点还没翻译
+                    for (const child of node.childNodes) {
+                        if (isCjkGap(child)) refreshCjkGap(child);
+                        else if (edgeSpacedBase.has(child)) refreshEdgeSpaces(child);
+                    }
                 } finally {
                     if (useParentSnapshot) dfsParentTexts.delete(node);
                 }
 
             } else if (node.nodeType === Node.TEXT_NODE) {
-                if (isCodeOrEditor(node)) return;
+                if (isCodeOrEditor(node)) {
+                    if (node.parentElement && !node.parentElement.isContentEditable) {
+                        translateIsolatedToolCallChrome(node.parentElement);
+                    }
+                    return;
+                }
 
                 let originalVal = node.nodeValue;
+                // React 改写了这个节点（内容和本套件上次写入的不同）：先前的翻译与前后空白纪录都不再适用，
+                // 之后判断「是不是本套件的译文」才不会误用旧纪录（例如节点被重用为用户内容，或改成图标名称）
+                if (translatedValues.has(node) && translatedValues.get(node) !== originalVal) {
+                    translatedValues.delete(node);
+                    edgeSpacedBase.delete(node);
+                }
+                // 收合过的空白被 React 改成别的内容（换了分隔字或清空后再写入），不再当作可还原的空白
+                if (originalVal && collapsedGaps.has(node)) collapsedGaps.delete(node);
+                if (handleIconFontText(node, originalVal)) return;
+                if (originalVal === ' ') {
+                    refreshCjkGap(node);
+                    return;
+                }
                 if (!originalVal || originalVal.trim().length < 1) return;
 
                 if (translatedValues.get(node) !== originalVal) {
@@ -1725,8 +3212,9 @@
                         translatedValues.set(node, node.nodeValue);
                         return;
                     }
-                    if (originalVal === ' more...' || originalVal === ' more…' || norm(originalVal) === 'more...') {
-                        node.nodeValue = USE_TW ? ' 個...' : ' 个...';
+                    const moreTail = originalVal.trim().match(/^more(\.\.\.|…)?$/i);
+                    if (moreTail) {
+                        node.nodeValue = (USE_TW ? ' 個' : ' 个') + (moreTail[1] || '');
                         translatedValues.set(node, node.nodeValue);
                         return;
                     }
@@ -1743,6 +3231,7 @@
                 }
 
                 const valNorm = norm(originalVal);
+                if (isSlashCommandNameNode(node, valNorm) || isSidebarPluginNameNode(node, valNorm)) return;
                 const cachedValue = translatedValues.get(node);
                 if ((valNorm === 'New' || (cachedValue === originalVal && valNorm === map.get('New'))) && isModelMenuText(node)) {
                     if (originalVal !== '新') {
@@ -1769,35 +3258,17 @@
                 }
                 if (cachedValue === originalVal || unchangedTextValues.get(node) === originalVal) return;
 
-                // Material Symbol 字体缺失图标修复（保留 React TextNode 避免遍历失同步）
-                if (valNorm === 'restore_page' && node.parentElement && (
-                    (typeof node.parentElement.classList?.contains === 'function' && node.parentElement.classList.contains('google-symbols')) ||
-                    (typeof node.parentElement.className === 'string' && node.parentElement.className.includes('google-symbols'))
-                )) {
-                    const iconHost = node.parentElement;
-                    if (!iconHost.querySelector?.('svg[data-ag-restore-icon]') && typeof document !== 'undefined' && typeof document.createElementNS === 'function') {
-                        const svgNs = 'http://www.w3.org/2000/svg';
-                        const svg = document.createElementNS(svgNs, 'svg');
-                        svg.setAttribute('data-ag-restore-icon', '1');
-                        svg.setAttribute('width', '16');
-                        svg.setAttribute('height', '16');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('fill', 'none');
-                        svg.setAttribute('stroke', 'currentColor');
-                        svg.setAttribute('stroke-width', '2');
-                        svg.setAttribute('stroke-linecap', 'round');
-                        svg.setAttribute('stroke-linejoin', 'round');
-                        svg.setAttribute('class', 'shrink-0');
-                        svg.setAttribute('style', 'display:inline-block;vertical-align:middle');
-                        for (const d of ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5']) {
-                            const path = document.createElementNS(svgNs, 'path');
-                            path.setAttribute('d', d);
-                            svg.appendChild(path);
-                        }
-                        iconHost.insertBefore(svg, node);
-                    }
-                    translatedValues.set(node, '');
-                    node.nodeValue = '';
+                // 拆段句子里由用户命名的字段不翻译，即使名称刚好和字典词条相同（例如名为 Settings 的插件）
+                if (isUserNameSlot(node)) {
+                    unchangedTextValues.set(node, originalVal);
+                    return;
+                }
+
+                // 输入框底部权限预设胶囊按钮为 shrink-0 + whitespace-nowrap，双语括号译名会挤压同行的模型选择按钮，改用短标签
+                if (Object.prototype.hasOwnProperty.call(PERMISSION_PILL_LABELS, valNorm) && node.parentElement?.closest?.('[data-testid="permissions-selector-trigger"]')) {
+                    const pillLabel = PERMISSION_PILL_LABELS[valNorm][USE_TW ? 1 : 0];
+                    translatedValues.set(node, pillLabel);
+                    node.nodeValue = pillLabel;
                     return;
                 }
 
@@ -1806,7 +3277,19 @@
                 const scopedSwarmHit = (inSwarmText && Object.prototype.hasOwnProperty.call(SCOPED_SWARM_MAP, valNorm))
                     ? SCOPED_SWARM_MAP[valNorm][USE_TW ? 1 : 0]
                     : null;
-                const commonTrans = scopedSwarmHit !== null ? scopedSwarmHit : translateExactOrDynamic(valNorm);
+                let scopedFilesChangedHit = null;
+                if (scopedSwarmHit === null && /^files?\s+changed$/i.test(valNorm) && node.parentElement) {
+                    const p = node.parentElement;
+                    const pText = dfsParentTexts.get(p) || originalParentTexts.get(p) || p.textContent || '';
+                    const gp = p.parentElement && typeof document !== 'undefined' && p.parentElement !== document.body && p.parentElement !== document.documentElement ? p.parentElement : null;
+                    const gpText = gp ? (dfsParentTexts.get(gp) || originalParentTexts.get(gp) || gp.textContent || '') : '';
+                    if (/^\d+\s*files?\s+changed\b/i.test(pText.trim()) || (gpText.length < 120 && /^\d+\s*files?\s+changed\b/i.test(gpText.trim()))) {
+                        scopedFilesChangedHit = (originalVal.startsWith(' ') ? ' ' : '') + (USE_TW ? '個檔案已變更' : '个文件已更改');
+                    }
+                }
+                const commonTrans = scopedSwarmHit !== null
+                    ? scopedSwarmHit
+                    : (scopedFilesChangedHit !== null ? scopedFilesChangedHit : translateExactOrDynamic(valNorm));
                 if (commonTrans !== null) {
                     newVal = commonTrans;
                 } else {
@@ -1850,6 +3333,13 @@
                     }
                 }
 
+                newVal = keepSourceEllipsis(originalVal, newVal);
+                if (newVal !== originalVal && newVal.length > 1 && (newVal.charAt(0) === ' ' || newVal.charAt(newVal.length - 1) === ' ')) {
+                    edgeSpacedBase.set(node, newVal);
+                    newVal = adaptEdgeSpaces(node, newVal);
+                } else {
+                    edgeSpacedBase.delete(node);
+                }
                 if (newVal !== originalVal) {
                     const p = node.parentElement;
                     if (p && !originalParentTexts.has(p)) {
@@ -1888,6 +3378,16 @@
         pendingNodes.clear();
         pendingMenuRefreshTargets.clear();
 
+        if (isSubframeWindow()) {
+            if (!isBuiltInSidecarDocument()) return;
+            if (!subframeActivated) {
+                subframeActivated = true;
+                const rootTarget = typeof document !== 'undefined' ? (document.body || document.documentElement) : null;
+                if (rootTarget) translateNode(rootTarget);
+                return;
+            }
+        }
+
         const queuedSet = new Set(nodes);
         for (const n of attrNodes) {
             if (!queuedSet.has(n)) {
@@ -1896,6 +3396,7 @@
         }
         for (const n of nodes) {
             translateNode(n);
+            refreshGapsAround(n);
         }
         for (const target of menuTargets) {
             try { refreshMenusLabelledBy(target); } catch (e) {}
@@ -1917,6 +3418,7 @@
             if (m.type === 'childList') {
                 if (m.removedNodes && m.removedNodes.length > 0) {
                     originalParentTexts.delete(m.target);
+                    refreshGapsAtRemoval(m);
                 }
                 invalidateChildTextCaches(m.target);
                 for (const n of m.addedNodes) pendingNodes.add(n);
@@ -1937,6 +3439,9 @@
                 }
                 if (m.attributeName === 'aria-label' || m.attributeName === 'aria-labelledby') {
                     pendingMenuRefreshTargets.add(m.target);
+                    // 字体图标宿主的无障碍名称改了：补画的 SVG 跟着调整（宿主拿掉名称后改由 SVG 带图标名称）
+                    const fallbackSvg = Array.from(m.target.children || []).find(isIconFallbackSvg);
+                    if (fallbackSvg) syncIconFallbackA11y(m.target, fallbackSvg);
                 }
             }
         }
@@ -1960,7 +3465,10 @@
         if (target) {
             try {
                 observeRoot(target);
-                translateNode(target);
+                if (!isSubframeWindow() || isBuiltInSidecarDocument()) {
+                    if (isSubframeWindow()) subframeActivated = true;
+                    translateNode(target);
+                }
             } catch (e) {}
         }
     };

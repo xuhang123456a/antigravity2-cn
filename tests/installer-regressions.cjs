@@ -6,7 +6,7 @@ const os = require('node:os');
 const vm = require('node:vm');
 const childProcess = require('node:child_process');
 const { readAsarLayout, patchAsarArchive, validateAsarCandidate } = require('../src/asar_patcher');
-const { patchPreloadJs, patchUtilsJs, patchTrayJs, patchLoadingOverlayJs, patchMainProcessModule } = require('../src/main_patches');
+const { patchPreloadJs, patchUtilsJs, patchMenuJs, patchTrayJs, patchLoadingOverlayJs, patchMainProcessModule } = require('../src/main_patches');
 const { loadEngine } = require('./helpers/runtime-loader.cjs');
 
 const signature = '/* --- ANTIGRAVITY CHINESE LOCALIZATION START --- */';
@@ -378,6 +378,37 @@ test('ensureWritePermission returns false on EPERM/EACCES and true on writable d
     assert.equal(runProbe(null), 'true');
 });
 
+test('ensureWritePermission tells root users on macOS to grant App Management instead of retrying sudo', () => {
+    const engineDir = path.resolve(__dirname, '..');
+    const runDarwinRootProbe = (errCode, extraArg = '') => {
+        const script = [
+            "const fs = require('fs');",
+            extraArg ? `process.argv.push(${JSON.stringify(extraArg)});` : '',
+            "Object.defineProperty(process, 'platform', { value: 'darwin' });",
+            "Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });",
+            `fs.accessSync = () => { const e = new Error('denied'); e.code = ${JSON.stringify(errCode)}; throw e; };`,
+            "const { ensureWritePermission } = require('./localization_engine');",
+            "process.stdout.write('RESULT=' + ensureWritePermission('/Applications/Antigravity.app/Contents/Resources'));"
+        ].filter(Boolean).join('\n');
+        const res = childProcess.spawnSync(process.execPath, ['-e', script], { cwd: engineDir, encoding: 'utf8' });
+        assert.equal(res.status, 0, res.stderr);
+        return `${res.stdout}\n${res.stderr}`;
+    };
+
+    for (const code of ['EPERM', 'EACCES']) {
+        const output = runDarwinRootProbe(code);
+        assert.match(output, /RESULT=false/);
+        assert.match(output, /App 管理/);
+        assert.match(output, /Cmd\+Q/);
+    }
+
+    const twOutput = runDarwinRootProbe('EPERM', '--tw');
+    assert.match(twOutput, /RESULT=false/);
+    assert.match(twOutput, /終端機應用程式/);
+    assert.match(twOutput, /指令碼/);
+    assert.doesNotMatch(twOutput, /腳本/);
+});
+
 test('resignAppOnMac and canRestartApp skip non-bundle staging dirs while preserving rollback on real bundle failure', t => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ag2cn-mac-bundle-'));
     t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -739,4 +770,466 @@ test('interactive brand prompt resolves choices in SC/TC and skips prompting whe
     assert.equal(resExplicit.status, 0, resExplicit.stderr || resExplicit.stdout);
     assert.equal(resExplicit.stdout.includes('请选择左上角品牌显示方式'), false);
     assert.equal(JSON.parse(fs.readFileSync(prefPath, 'utf8'))[installKey].brandTitle, 'translated');
+});
+
+test('main-process patches cover v2.35.1 remote disconnectedPage and signInCallback HTML', () => {
+    const discOrig = [
+        "const BUTTON_LABELS = { reconnect: 'Reconnect', stop: 'Stop Server', close: 'Close', };",
+        "const title = restarting ? 'Restarting…' : connecting ? 'Reconnecting…' : 'Disconnected';",
+        "const heading = restarting ? `Restarting the Antigravity server on ${host}…` : connecting ? `Reconnecting to ${host}…` : `Disconnected from ${host}`;",
+        "const body = restarting ? 'This window opens it again once it has started.' : connecting ? page.serverStopped ? `Its server on ${host} stopped, and its agents with it.` : `Agents keep running on ${host}.` : page.serverStopped ? `Its agents on ${host} stopped with it.` : `Agents keep running on ${host} unless its server stopped.`;"
+    ].join('\n');
+    const discSc = patchMainProcessModule('dist/remote/disconnectedPage.js', discOrig, false);
+    assert.match(discSc, /重新连接/);
+    assert.match(discSc, /停止服务/);
+    assert.match(discSc, /已断开连接/);
+    assert.match(discSc, /已断开与 \$\{host\} 的连接/);
+    const discTw = patchMainProcessModule('dist/remote/disconnectedPage.js', discOrig, true);
+    assert.match(discTw, /重新連線/);
+    assert.match(discTw, /停止伺服器/);
+    assert.match(discTw, /已中斷連線/);
+    assert.match(discTw, /已中斷與 \$\{host\} 的連線/);
+
+    const cbOrig = [
+        "const SIGNED_IN = page('You have successfully authenticated.', 'You can close this tab and return to Antigravity.');",
+        "return page(\"Sign-in didn't finish\", `Antigravity couldn't reach ${host} to finish signing in. ` +",
+        "'Sign in again from Antigravity.');"
+    ].join('\n');
+    const cbSc = patchMainProcessModule('dist/remote/signInCallback.js', cbOrig, false);
+    assert.match(cbSc, /您已成功完成身份验证。/);
+    assert.match(cbSc, /登录未完成/);
+    const cbTw = patchMainProcessModule('dist/remote/signInCallback.js', cbOrig, true);
+    assert.match(cbTw, /您已成功完成身分驗證。/);
+    assert.match(cbTw, /登入未完成/);
+
+    const capOrig = `<title>Browser Stream Capture</title>\nconst err = 'Capture session failed';`;
+    const capSc = patchMainProcessModule('dist/browserStream/capturePage.js', capOrig, false);
+    assert.match(capSc, /<title>浏览器串流捕获<\/title>/);
+    assert.match(capSc, /'捕获会话失败'/);
+    const capTw = patchMainProcessModule('dist/browserStream/capturePage.js', capOrig, true);
+    assert.match(capTw, /<title>瀏覽器串流擷取<\/title>/);
+    assert.match(capTw, /'擷取工作階段失敗'/);
+});
+
+test('checkSupportedNodeVersion rejects Node < 16 and accepts Node >= 16 (including 18.x without warnings)', () => {
+    const { checkSupportedNodeVersion } = require('../localization_engine');
+    assert.equal(typeof checkSupportedNodeVersion, 'function');
+    assert.equal(checkSupportedNodeVersion(), true);
+
+    const nodeDescriptor = Object.getOwnPropertyDescriptor(process.versions, 'node');
+    const origError = console.error;
+    const origWarn = console.warn;
+    const errors = [];
+    const warnings = [];
+    console.error = (...args) => errors.push(args.join(' '));
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+        for (const oldVer of ['12.22.12', '14.21.3']) {
+            Object.defineProperty(process.versions, 'node', { value: oldVer, configurable: true });
+            assert.equal(checkSupportedNodeVersion(), false);
+            assert.ok(errors.some(msg => msg.includes(oldVer)));
+        }
+
+        Object.defineProperty(process.versions, 'node', { value: '16.20.2', configurable: true });
+        assert.equal(checkSupportedNodeVersion(), true);
+        assert.ok(warnings.some(msg => msg.includes('16.20.2')));
+
+        warnings.length = 0;
+        for (const okVer of ['18.20.3', '18.20.8']) {
+            Object.defineProperty(process.versions, 'node', { value: okVer, configurable: true });
+            assert.equal(checkSupportedNodeVersion(), true);
+        }
+        assert.equal(warnings.length, 0);
+    } finally {
+        console.error = origError;
+        console.warn = origWarn;
+        if (nodeDescriptor) {
+            Object.defineProperty(process.versions, 'node', nodeDescriptor);
+        }
+    }
+});
+
+test('compareNodeVersions, resolveCheckNode and macOS .command launchers avoid BSD-incompatible sort -V', () => {
+    const { compareNodeVersions, resolveCheckNode } = require('../localization_engine');
+    const sorted = ['v8.17.0', 'v24.2.0', 'v14.21.3', 'v20.18.0'].sort(compareNodeVersions);
+    assert.deepEqual(sorted, ['v8.17.0', 'v14.21.3', 'v20.18.0', 'v24.2.0']);
+    assert.equal(resolveCheckNode(), process.execPath);
+
+    const fs = require('fs');
+    const path = require('path');
+    const cmdFiles = ['双击安装中文汉化.command', '双击安装繁体中文.command', '双击卸载还原官方英文.command'];
+    for (const file of cmdFiles) {
+        const raw = fs.readFileSync(path.join(__dirname, '..', file));
+        assert.ok(!(raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf), `${file} must not have UTF-8 BOM`);
+        const text = raw.toString('utf8');
+        assert.ok(!text.includes('\r\n'), `${file} must use LF line endings`);
+        assert.ok(!/\bsort\s+-V\b/.test(text), `${file} must not use GNU-only sort -V on macOS`);
+        assert.match(text, /CURR_NODE_MAJOR/);
+    }
+});
+
+test('ensure_localized detects outdated injected preload payload and refreshes localization when --fix is set', t => {
+    const ensure = require('../scripts/ensure_localized');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ag2cn-outdated-'));
+    const prevAppData = process.env.APPDATA;
+    const prevXdg = process.env.XDG_CONFIG_HOME;
+    process.env.APPDATA = path.join(root, 'AppData');
+    process.env.XDG_CONFIG_HOME = path.join(root, 'AppData');
+    t.after(() => {
+        process.env.APPDATA = prevAppData;
+        process.env.XDG_CONFIG_HOME = prevXdg;
+        fs.rmSync(root, { recursive: true, force: true });
+    });
+
+    const fakeInstall = path.join(root, 'Antigravity');
+    const fakeRes = path.join(fakeInstall, 'resources');
+    fs.mkdirSync(fakeRes, { recursive: true });
+    fs.writeFileSync(path.join(fakeInstall, 'Antigravity.exe'), '');
+
+    const staleBlock = [
+        '/* --- ANTIGRAVITY CHINESE LOCALIZATION START --- */',
+        '(() => { window.__agCnRuntimeStart = () => {}; const USE_TW = false; const map = new Map(Object.entries({"Model":"模型"})); })();',
+        '/* --- ANTIGRAVITY CHINESE LOCALIZATION END --- */'
+    ].join('\n');
+    const asarPath = path.join(fakeRes, 'app.asar');
+    writeArchive(asarPath, { 'dist/preload.js': { body: '// base\n' + staleBlock } });
+
+    assert.equal(ensure.isLocalized(asarPath), true);
+    assert.equal(ensure.isLocalizationCurrent(asarPath, { useTw: false, brandTitle: 'english' }), false);
+
+    // Status check without --fix returns 2 when payload is outdated; --launch without --fix still launches and returns 0
+    assert.equal(ensure.main([`--install-dir=${fakeInstall}`, '--sc', '--brand-title=english'], {
+        platform: 'win32',
+        execFileSync: () => 'INFO: No tasks.\r\n'
+    }), 2);
+    let launchedWithoutFix = false;
+    assert.equal(ensure.main(['--launch', `--install-dir=${fakeInstall}`, '--sc', '--brand-title=english'], {
+        platform: 'win32',
+        execFileSync: () => 'INFO: No tasks.\r\n',
+        spawn: () => {
+            launchedWithoutFix = true;
+            return { unref() {} };
+        }
+    }), 0);
+    assert.equal(launchedWithoutFix, true);
+
+    const freshBlock = ensure.buildExpectedInjectedBlock({ useTw: false, brandTitle: 'english' });
+    let reInjected = false;
+    let launched = false;
+    const code = ensure.main(['--fix', '--launch', `--install-dir=${fakeInstall}`, '--sc', '--brand-title=english'], {
+        platform: 'win32',
+        execFileSync: () => 'INFO: No tasks.\r\n',
+        spawnSync: () => {
+            reInjected = true;
+            writeArchive(asarPath, { 'dist/preload.js': { body: '// base\n' + freshBlock } });
+            return { status: 0 };
+        },
+        spawn: () => {
+            launched = true;
+            return { unref() {} };
+        }
+    });
+    assert.equal(code, 0);
+    assert.equal(reInjected, true);
+    assert.equal(launched, true);
+    assert.equal(ensure.isLocalizationCurrent(asarPath, { useTw: false, brandTitle: 'english' }), true);
+});
+
+test('Linux native support detects install dirs, wrappers, /proc PIDs, XDG caches, and shell scripts use LF + UTF-8', t => {
+    const repoRoot = path.resolve(__dirname, '..');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ag2cn-linux-support-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    // 1. Linux shell launchers must use LF (no CRLF), UTF-8 without BOM, and version-sorted nvm lookup
+    for (const shFile of ['install_linux.sh', 'uninstall_linux.sh']) {
+        const shPath = path.join(repoRoot, shFile);
+        const buf = fs.readFileSync(shPath);
+        assert.equal(buf.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])), false, `${shFile} must not have UTF-8 BOM`);
+        assert.equal(buf.includes(0x0d), false, `${shFile} must use LF line endings`);
+        assert.match(buf.toString('utf8'), /CURR_NODE_MAJOR/, `${shFile} must use version-sorted nvm lookup`);
+        if (process.platform !== 'win32') {
+            const stat = fs.statSync(shPath);
+            assert.ok((stat.mode & 0o111) !== 0, `${shFile} must be executable`);
+            const check = childProcess.spawnSync('bash', ['-n', shPath], { encoding: 'utf8' });
+            assert.equal(check.status, 0, check.stderr);
+        }
+    }
+
+    const engine = require(path.join(repoRoot, 'localization_engine.js'));
+
+    // 2. Wrapper script & .desktop parsing
+    const fakeInstall = path.join(root, 'opt', 'antigravity');
+    const fakeRes = path.join(fakeInstall, 'resources');
+    fs.mkdirSync(fakeRes, { recursive: true });
+    writeArchive(path.join(fakeRes, 'app.asar'), { 'dist/preload.js': { body: '// original' } });
+    const fakeBin = path.join(fakeInstall, 'antigravity');
+    fs.writeFileSync(fakeBin, '#!/bin/sh\n', 'utf8');
+
+    const wrapperPath = path.join(root, 'wrapper-antigravity');
+    const wrapperTarget = process.platform === 'win32' ? '/opt/antigravity-test' : fakeInstall;
+    fs.writeFileSync(wrapperPath, `#!/bin/bash\nAPP_DIR="${wrapperTarget}"\nexec "$APP_DIR/antigravity" "$@"\n`, 'utf8');
+    const wrapperDirs = engine.extractLinuxDirsFromWrapper(wrapperPath);
+    assert.ok(wrapperDirs.includes(wrapperTarget));
+
+    const desktopPath = path.join(root, 'antigravity.desktop');
+    fs.writeFileSync(desktopPath, `[Desktop Entry]\nName=Antigravity\nExec="${wrapperPath}" %U\n`, 'utf8');
+    const desktopDirs = engine.extractLinuxDirsFromDesktopFile(desktopPath);
+    assert.ok(desktopDirs.includes(wrapperTarget));
+
+    assert.equal(engine.resolveLinuxAppRoot(fakeRes), path.resolve(fakeInstall));
+    assert.equal(engine.findLinuxExecutable(fakeInstall), fakeBin);
+    assert.equal(engine.findLinuxExecutable(fakeRes), fakeBin);
+
+    if (process.platform === 'linux') {
+        assert.equal(engine.canRestartApp(fakeInstall), true);
+        assert.equal(engine.canRestartApp(path.join(root, 'empty-dir')), false);
+
+        // 3. Auto-detect via ANTIGRAVITY_INSTALL_DIR and PATH wrapper
+        const prevEnvDir = process.env.ANTIGRAVITY_INSTALL_DIR;
+        process.env.ANTIGRAVITY_INSTALL_DIR = fakeInstall;
+        t.after(() => {
+            if (prevEnvDir === undefined) delete process.env.ANTIGRAVITY_INSTALL_DIR;
+            else process.env.ANTIGRAVITY_INSTALL_DIR = prevEnvDir;
+        });
+        assert.equal(engine.detectInstallationDir(), path.resolve(fakeInstall));
+
+        // 4. /proc PID matching scoped to installDir
+        const fakeProc = path.join(root, 'proc');
+        const otherInstall = path.join(root, 'other', 'antigravity');
+        fs.mkdirSync(otherInstall, { recursive: true });
+        const otherBin = path.join(otherInstall, 'antigravity');
+        fs.writeFileSync(otherBin, '', 'utf8');
+        fs.mkdirSync(path.join(fakeProc, '424242'), { recursive: true });
+        fs.mkdirSync(path.join(fakeProc, '424243'), { recursive: true });
+        fs.mkdirSync(path.join(fakeProc, '424244'), { recursive: true });
+        fs.symlinkSync(fakeBin, path.join(fakeProc, '424242', 'exe'));
+        fs.symlinkSync(otherBin, path.join(fakeProc, '424243', 'exe'));
+        fs.symlinkSync('/bin/sh', path.join(fakeProc, '424244', 'exe'));
+        assert.deepEqual(engine.findLinuxAppPids(fakeInstall, fakeProc), [424242]);
+        assert.deepEqual(engine.findLinuxAppPids(fakeRes, fakeProc), [424242]);
+
+        // 5. XDG_CONFIG_HOME cache cleanup preserves Local Storage and clears Antigravity / antigravity caches
+        const fakeConfig = path.join(root, 'xdg-config');
+        const topCache = path.join(fakeConfig, 'Antigravity', 'Code Cache');
+        const partCache = path.join(fakeConfig, 'Antigravity', 'Partitions', 'hub-browser-1', 'Cache');
+        const lowerCache = path.join(fakeConfig, 'antigravity', 'GPUCache');
+        const keepData = path.join(fakeConfig, 'Antigravity', 'Partitions', 'hub-browser-1', 'Local Storage');
+        for (const d of [topCache, partCache, lowerCache, keepData]) {
+            fs.mkdirSync(d, { recursive: true });
+            fs.writeFileSync(path.join(d, 'dummy.bin'), 'x');
+        }
+        const prevXdg = process.env.XDG_CONFIG_HOME;
+        process.env.XDG_CONFIG_HOME = fakeConfig;
+        t.after(() => {
+            if (prevXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+            else process.env.XDG_CONFIG_HOME = prevXdg;
+        });
+        engine.cleanElectronCache();
+        assert.equal(fs.existsSync(topCache), false);
+        assert.equal(fs.existsSync(partCache), false);
+        assert.equal(fs.existsSync(lowerCache), false);
+        assert.equal(fs.existsSync(keepData), true);
+
+        // 6. ensureWritePermission on Linux non-TTY returns false for unwritable dir instead of invoking sudo
+        if (process.getuid && process.getuid() !== 0) {
+            const roDir = path.join(root, 'readonly-res');
+            fs.mkdirSync(roDir, { recursive: true });
+            fs.chmodSync(roDir, 0o555);
+            t.after(() => { try { fs.chmodSync(roDir, 0o755); } catch (_e) {} });
+            const permCheck = childProcess.spawnSync(
+                process.execPath,
+                ['-e', `const { ensureWritePermission } = require('./localization_engine'); process.stdout.write(String(ensureWritePermission(${JSON.stringify(roDir)})));`],
+                { cwd: repoRoot, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
+            );
+            assert.equal(permCheck.status, 0, permCheck.stderr);
+            assert.equal(permCheck.stdout.trim(), 'false');
+        }
+    }
+
+    // 7. Linux root EACCES must not emit macOS-only App Management / Cmd+Q guidance
+    const linuxRootScript = [
+        "const fs = require('fs');",
+        "Object.defineProperty(process, 'platform', { value: 'linux' });",
+        "Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });",
+        "fs.accessSync = () => { const e = new Error('denied'); e.code = 'EACCES'; throw e; };",
+        "const { ensureWritePermission } = require('./localization_engine');",
+        "process.stdout.write('RESULT=' + ensureWritePermission('/opt/antigravity/resources'));"
+    ].join('\n');
+    const linuxRootRes = childProcess.spawnSync(process.execPath, ['-e', linuxRootScript], { cwd: repoRoot, encoding: 'utf8' });
+    assert.equal(linuxRootRes.status, 0, linuxRootRes.stderr);
+    const linuxRootOut = `${linuxRootRes.stdout}\n${linuxRootRes.stderr}`;
+    assert.match(linuxRootOut, /RESULT=false/);
+    assert.doesNotMatch(linuxRootOut, /App 管理|Cmd\+Q/);
+});
+test('menu translation covers v2.35.1 View/Edit items (Reload, Substitutions, Speech)', () => {
+    const { patchMenuJs } = require('../src/main_patches');
+    const sample = [
+        "const electron_1 = { Menu: { setApplicationMenu(m) { this.applied = m; } } };",
+        "const menu = { items: [",
+        "  { label: 'View', submenu: { items: [{ label: 'Reload' }, { label: 'Force Reload' }] } },",
+        "  { label: 'Edit', submenu: { items: [",
+        "    { label: 'Substitutions', submenu: { items: [{ label: 'Smart Quotes' }, { label: 'Text Replacement' }] } },",
+        "    { label: 'Speech', submenu: { items: [{ label: 'Start Speaking' }, { label: 'Stop Speaking' }] } }",
+        "  ] } }",
+        "] };",
+        "electron_1.Menu.setApplicationMenu(menu);",
+        "module.exports = menu;"
+    ].join('\n');
+    const labels = useTw => {
+        const mod = { exports: {} };
+        vm.runInNewContext(patchMenuJs(sample, useTw), { module: mod, console: { log() {}, warn() {} } });
+        const out = [];
+        const walk = items => items.forEach(i => { out.push(i.label); if (i.submenu) walk(i.submenu.items); });
+        walk(mod.exports.items);
+        return out;
+    };
+    assert.deepEqual(labels(true), ['檢視', '重新載入', '強制重新載入', '編輯', '替代', '智慧型引號', '文字替代', '語音', '開始朗讀', '停止朗讀']);
+    assert.deepEqual(labels(false), ['视图', '重新加载', '强制重新加载', '编辑', '替换', '智能引号', '文本替换', '语音', '开始朗读', '停止朗读']);
+});
+
+test('main-process patches cover v2.35.1 SSH remote flow, passkey window, WSL messages and page lang', () => {
+    const { MAIN_PROCESS_PATCH_TARGETS } = require('../src/main_patches');
+    for (const rel of ['dist/remote/sshArgs.js', 'dist/remote/sshConnection.js', 'dist/remote/sshDestination.js', 'dist/remote/sshConfigHosts.js',
+        'dist/remote/sshBridge.js', 'dist/remote/sshErrorText.js', 'dist/wsl.js', 'dist/cablev2.js', 'dist/qrEncoder.js', 'dist/browserStream/capturePage.js']) {
+        assert.ok(MAIN_PROCESS_PATCH_TARGETS.includes(rel), `${rel} 必须列入主进程补丁目标`);
+    }
+
+    const argsSrc = [
+        "exports.LINUX_HOST_NEEDED = 'Antigravity needs a Linux host on x64 or arm64 with glibc 2.26 or newer.';",
+        'function describe(code, prompts) {',
+        '    switch (code) {',
+        "        case 'CONNECTION_FAILED':",
+        "            return `Couldn't connect to the SSH host. Check its name, your network and ssh config (e.g. a ProxyCommand), and that ssh to it works in a terminal${prompts === 'no' ? ' without a prompt' : ''}.`;",
+        "        case 'UNSUPPORTED_HOST':",
+        "            return `The SSH host isn't supported. ${exports.LINUX_HOST_NEEDED} Windows and macOS hosts aren't supported yet.`;",
+        '        default:',
+        "            return `Couldn't connect to the SSH host (${String(code)}).`;",
+        '    }',
+        '}',
+        'return describe;'
+    ].join('\n');
+    const describeSc = new Function('exports', patchMainProcessModule('dist/remote/sshArgs.js', argsSrc, false))({});
+    assert.equal(describeSc('CONNECTION_FAILED', 'yes'), '无法连接到 SSH 主机。请检查主机名、网络和 ssh 配置（例如 ProxyCommand），并确认在终端中可以用 ssh 连接到该主机。');
+    assert.equal(describeSc('UNSUPPORTED_HOST'), '不支持该 SSH 主机。Antigravity 需要使用 glibc 2.26 或更高版本、x64 或 arm64 架构的 Linux 主机。目前尚不支持 Windows 和 macOS 主机。');
+    assert.equal(describeSc('WEIRD'), '无法连接到 SSH 主机（WEIRD）。');
+    const describeTw = new Function('exports', patchMainProcessModule('dist/remote/sshArgs.js', argsSrc, true))({});
+    assert.equal(describeTw('CONNECTION_FAILED', 'no'), '無法連線至 SSH 主機。請檢查主機名稱、網路與 ssh 設定（例如 ProxyCommand），並確認在終端機中不需任何提示就能用 ssh 連線至該主機。');
+
+    const connSrc = [
+        'function describeExit(code, signal, lastLine) {',
+        '    const how = signal ? `signal ${signal}` : `exit code ${code}`;',
+        '    return lastLine',
+        '        ? `ssh exited (${how}): ${(0, types_1.sanitizeRemoteText)(lastLine, 300)}`',
+        '        : `ssh exited (${how}).`;',
+        '}',
+        'function status(label) { return `Downloading the Antigravity server on ${label}…`; }',
+        'return { describeExit, status };'
+    ].join('\n');
+    const connPatched = patchMainProcessModule('dist/remote/sshConnection.js', connSrc, false);
+    const conn = new Function('types_1', connPatched)({ sanitizeRemoteText: s => s });
+    assert.equal(conn.describeExit(255, null, ''), 'ssh 已退出（退出代码 255）。');
+    assert.equal(conn.describeExit(null, 'SIGTERM', 'Connection reset'), 'ssh 已退出（信号 SIGTERM）：Connection reset');
+    assert.equal(conn.status('devbox'), '正在 devbox 上下载 Antigravity 服务器…');
+    assert.equal(patchMainProcessModule('dist/remote/sshConnection.js', connPatched, false), connPatched, '重复应用不得再改动');
+
+    // SSH 配置文件检查：英文语序 `${file} ${what}: ${why}. ${fix}` 改成中文句式
+    const cfgSrc = [
+        'const invalid = (problem) => new Error(`The SSH config file ${problem}`);',
+        'const NOT_CONFIG = "isn\'t an SSH config file";',
+        "const CHOOSE_CONFIG = 'Choose a file of ssh settings, such as ~/.ssh/config.';",
+        'const notConfig = (why) => ({ what: NOT_CONFIG, why, fix: CHOOSE_CONFIG });',
+        'const BINARY = notConfig("it\'s a binary file");',
+        'function describeSshConfigProblem(file, { what, why, fix }) {',
+        '    return `${file} ${what}: ${why}. ${fix}`;',
+        '}',
+        "const shown = 'cfg';",
+        "return [describeSshConfigProblem('/bin/ls', BINARY), invalid(`must be an absolute path (got ${shown}).`).message, invalid(`${shown} doesn't exist or can't be read.`).message];"
+    ].join('\n');
+    assert.deepEqual(new Function(patchMainProcessModule('dist/remote/sshConfigHosts.js', cfgSrc, false))(), [
+        '/bin/ls 不是 SSH 配置文件：这是二进制文件。请选择 ssh 配置文件，例如 ~/.ssh/config。',
+        'SSH 配置文件必须是绝对路径（当前为 cfg）。',
+        'SSH 配置文件（cfg）不存在或无法读取。'
+    ]);
+
+    const errSrc = [
+        "function logPath() { return '/tmp/main.log'; }",
+        'function codeAndLogs(err) { return `Error code: ${err.code}\\nLogs: ${logPath()}`; }',
+        'function detailOf(err, label) { const text = err.message; return err.reportedByRemote ? `${label} reported: ${text}` : text; }',
+        'return { codeAndLogs, detailOf };'
+    ].join('\n');
+    const errSc = new Function(patchMainProcessModule('dist/remote/sshErrorText.js', errSrc, false))();
+    assert.equal(errSc.codeAndLogs({ code: 'UNKNOWN' }), '错误代码：UNKNOWN\n日志：/tmp/main.log');
+    assert.equal(errSc.detailOf({ reportedByRemote: true, message: 'disk full' }, 'devbox'), 'devbox 报告：disk full');
+
+    const rm = patchMainProcessModule('dist/remote/remoteManager.js', [
+        "title: 'Could not restart the SSH server',",
+        "this.reportError(err, entry.label, 'Could not restart the SSH server', win);",
+        "this.reportError(err, entry.label, 'Could not stop the SSH server', win);",
+        "this.reportError(err, entry.label, 'Sign-in failed', win);",
+        "throw new types_1.RemoteError('CANCELLED', 'Connection cancelled.');"
+    ].join('\n'), false);
+    assert.equal(rm.split('无法重启 SSH 服务器').length - 1, 2);
+    for (const zh of ["'无法停止 SSH 服务器'", "'登录失败'", "'连接已取消。'"]) assert.ok(rm.includes(zh), zh);
+
+    const wslMain = patchMainProcessModule('dist/main.js', 'const msg = `Failed to install the server into WSL distro "${WSL_DISTRO}":\\n${err.message}`;', false);
+    assert.ok(wslMain.includes('`无法将服务器安装到 WSL 发行版“${WSL_DISTRO}”：\\n${err.message}`'));
+    const cable = patchMainProcessModule('dist/cablev2.js', "<html lang=\"en\"><title>Passkeys</title> updateStatus('Connecting to your device…')", true);
+    assert.equal(cable, "<html lang=\"zh-TW\"><title>通行金鑰</title> updateStatus('正在連線至您的裝置…')");
+    // 页面语系只在繁体模式改为 zh-TW，简体模式保持原样
+    const promptHtml = '`<!doctype html><html lang="en"${dark ? \' class="dark"\' : \'\'}>`';
+    assert.equal(patchMainProcessModule('dist/remote/sshPrompts.js', promptHtml, false), promptHtml);
+    assert.equal(patchMainProcessModule('dist/remote/sshPrompts.js', promptHtml, true), '`<!doctype html><html lang="zh-TW"${dark ? \' class="dark"\' : \'\'}>`');
+    for (const rel of ['dist/ideInstall/wizardHtml.js', 'dist/remote/disconnectedPage.js', 'dist/remote/signInCallback.js', 'dist/cablev2.js']) {
+        assert.equal(patchMainProcessModule(rel, '<html lang="en">', true), '<html lang="zh-TW">', rel);
+        assert.equal(patchMainProcessModule(rel, '<html lang="en">', false), '<html lang="en">', rel);
+    }
+});
+
+test('patchMenuJs translates Unicode ellipsis, Reload, Speech, Fullscreen and Window menu items in SC and TC', () => {
+    const menuOrig = "electron_1.Menu.setApplicationMenu(menu);";
+    const runMenu = (useTw) => {
+        const patched = patchMenuJs(menuOrig, useTw);
+        const menuObj = {
+            items: [
+                { label: 'Settings…' },
+                { label: 'Check for Updates…' },
+                { label: 'Reload' },
+                { label: 'Force Reload' },
+                { label: 'Speech', submenu: { items: [{ label: 'Start Speaking' }, { label: 'Stop Speaking' }] } },
+                { label: 'Toggle Fullscreen' },
+                { label: 'Enter Full Screen' },
+                { label: 'Emoji & Symbols' }
+            ]
+        };
+        const ctx = {
+            menu: menuObj,
+            electron_1: { Menu: { setApplicationMenu() {} } }
+        };
+        vm.runInNewContext(patched, ctx);
+        return menuObj.items;
+    };
+
+    const sc = runMenu(false);
+    assert.equal(sc[0].label, '设置...');
+    assert.equal(sc[1].label, '检查更新...');
+    assert.equal(sc[2].label, '重新加载');
+    assert.equal(sc[3].label, '强制重新加载');
+    assert.equal(sc[4].label, '语音');
+    assert.equal(sc[4].submenu.items[0].label, '开始朗读');
+    assert.equal(sc[4].submenu.items[1].label, '停止朗读');
+    assert.equal(sc[5].label, '切换全屏');
+    assert.equal(sc[6].label, '进入全屏');
+    assert.equal(sc[7].label, '表情与符号');
+
+    const tw = runMenu(true);
+    assert.equal(tw[0].label, '設定...');
+    assert.equal(tw[1].label, '檢查更新...');
+    assert.equal(tw[2].label, '重新載入');
+    assert.equal(tw[3].label, '強制重新載入');
+    assert.equal(tw[4].label, '語音');
+    assert.equal(tw[4].submenu.items[0].label, '開始朗讀');
+    assert.equal(tw[4].submenu.items[1].label, '停止朗讀');
+    assert.equal(tw[5].label, '切換全螢幕');
+    assert.equal(tw[6].label, '進入全螢幕');
+    assert.equal(tw[7].label, '表情符號與符號');
 });
